@@ -1124,12 +1124,14 @@ async function submitRSVP(resp) {
   data.confirmations.push(entry);
   saveData();
 
-  // Usa XMLHttpRequest com form-data para contornar CORS
-  const form = new FormData();
-  form.append('payload', JSON.stringify({ action: 'confirmar', ...entry }));
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', SHEET_URL, true);
-  xhr.send(form);
+  // Envia via GET com iframe oculto (sem CORS)
+  const params = encodeURIComponent(JSON.stringify({ action: 'confirmar', ...entry }));
+  const url = SHEET_URL + '?data=' + params + '&t=' + Date.now();
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = url;
+  document.body.appendChild(iframe);
+  setTimeout(() => { try { document.body.removeChild(iframe); } catch(e) {} }, 5000);
 
   document.getElementById('rsvp-form-block').style.display = 'none';
   document.querySelector('.admin-link').style.display = 'none';
