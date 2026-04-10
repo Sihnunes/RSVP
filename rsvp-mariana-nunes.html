@@ -931,23 +931,32 @@
 
 <script>
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxH6PFxkQOKvtqSkTiuTuss2jovIYkQj9KeL3ch2nw5cM-oiG8YsMsODEokC4kwBNVEXw/exec';
-const SK = 'rsvp_mariana_v2';
+const SK = 'rsvp_mariana_v3';
 
-// Tudo fica no localStorage — convidados, config, confirmações locais
+// Config e confirmações locais no localStorage
 function loadData() {
   try { const r = localStorage.getItem(SK); if (r) return JSON.parse(r); } catch(e) {}
   return {
     config: { name: 'Mariana Nunes', date: '10 de Dezembro de 2026', local: 'Casa Tarumã, São Paulo', prazo: '28 de novembro de 2026', pass: 'admin123' },
-    guests: [],
     confirmations: []
   };
 }
 function saveData() { localStorage.setItem(SK, JSON.stringify(data)); }
 
 let data = loadData();
+let guestList = []; // vem do Sheets
 let confirmList = [];
 
 function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+
+// Busca convidados do Sheets
+async function fetchGuests() {
+  try {
+    const r = await fetch(SHEET_URL + '?t=' + Date.now());
+    const d = await r.json();
+    if (d.ok) guestList = d.convidados || [];
+  } catch(e) { guestList = []; }
+}
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -956,7 +965,7 @@ function showPage(id) {
   const navEl = document.getElementById('nav-' + id);
   if (navEl) navEl.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (id === 'admin') { loadConfigFields(); renderGuests(); showTab('tab-config'); }
+  if (id === 'admin') { loadConfigFields(); renderAdminGuests(); showTab('tab-config'); }
 }
 
 function showTab(id) {
@@ -965,7 +974,7 @@ function showTab(id) {
   document.getElementById(id).classList.add('active');
   document.getElementById('tab-btn-' + id.replace('tab-','')).classList.add('active');
   if (id === 'tab-confirmacoes') fetchAndRenderConfirmations();
-  if (id === 'tab-guests') renderGuests();
+  if (id === 'tab-guests') renderAdminGuests();
 }
 
 // FORMAT PHONE
@@ -979,34 +988,57 @@ document.getElementById('guest-phone').addEventListener('input', function() {
   this.value = fmtPhone(this.value);
 });
 
-document.getElementById('guest-name').addEventListener('input', function() {
-  const g = data.guests.find(x => norm(x.name) === norm(this.value));
-  document.getElementById('plus-section').classList.toggle('visible', !!(g && g.type === 'familia'));
+// Ao digitar o nome, busca convidado no Sheets e monta select de acompanhantes
+document.getElementById('guest-name').addEventListener('input', async function() {
+  const name = this.value.trim();
+  if (!name) { document.getElementById('plus-section').classList.remove('visible'); return; }
+
+  // Se lista não carregada ainda, busca
+  if (!guestList.length) await fetchGuests();
+
+  const guest = guestList.find(x => norm(x.name) === norm(name));
+  const ps = document.getElementById('plus-section');
+
+  if (guest && guest.type === 'familia' && guest.limit > 1) {
+    // Monta opções até o limite da família
+    const sel = document.getElementById('plus-ones');
+    sel.innerHTML = '';
+    for (let i = 1; i <= guest.limit; i++) {
+      const opt = document.createElement('option');
+      opt.value = i - 1; // acompanhantes = total - 1
+      opt.textContent = i === 1 ? 'Apenas eu' : `Eu + ${i - 1} acompanhante${i - 1 > 1 ? 's' : ''}`;
+      sel.appendChild(opt);
+    }
+    ps.classList.add('visible');
+  } else {
+    ps.classList.remove('visible');
+  }
 });
 
-function submitRSVP(resp) {
+async function submitRSVP(resp) {
   const name = document.getElementById('guest-name').value.trim();
   const phone = document.getElementById('guest-phone').value.trim();
 
   if (!name) { showRSVPAlert('Por favor, informe seu nome completo.'); return; }
   if (!phone || phone.replace(/\D/g,'').length < 10) { showRSVPAlert('Por favor, informe um telefone válido.'); return; }
 
-  const guest = data.guests.find(g => norm(g.name) === norm(name));
+  // Busca lista atualizada do Sheets
+  showRSVPAlert('Verificando sua presença na lista…');
+  await fetchGuests();
+
+  const guest = guestList.find(g => norm(g.name) === norm(name));
   if (!guest) { showRSVPAlert('Seu nome não foi encontrado na lista de convidados. Verifique com a organização.'); return; }
 
-  if (data.confirmations.find(c => norm(c.name) === norm(name))) {
-    showRSVPAlert('Você já enviou sua confirmação. Obrigada!'); return;
-  }
+  document.getElementById('rsvp-alert').classList.remove('visible');
 
-  const plus = (guest.type === 'familia') ? parseInt(document.getElementById('plus-ones').value) || 0 : 0;
+  const plusEl = document.getElementById('plus-ones');
+  const plus = (guest.type === 'familia' && guest.limit > 1) ? parseInt(plusEl.value) || 0 : 0;
   const date = new Date().toLocaleString('pt-BR');
   const entry = { name: guest.name, phone, resp, plus, date };
 
-  // Salva localmente para o painel
   data.confirmations.push(entry);
   saveData();
 
-  // Envia para Google Sheets em background
   fetch(SHEET_URL, {
     method: 'POST',
     mode: 'no-cors',
@@ -1023,7 +1055,6 @@ function showRSVPAlert(msg) {
   const el = document.getElementById('rsvp-alert');
   el.textContent = msg;
   el.classList.add('visible');
-  setTimeout(() => el.classList.remove('visible'), 5000);
 }
 
 // ADMIN LOGIN
@@ -1064,46 +1095,31 @@ function saveConfig() {
   setTimeout(() => el.classList.remove('visible'), 3500);
 }
 
-// GUESTS — localStorage
-function addGuest() {
-  const name = document.getElementById('new-guest-name').value.trim();
-  const type = document.getElementById('new-guest-type').value;
-  if (!name) return;
-  if (data.guests.find(g => norm(g.name) === norm(name))) {
-    showAdminAlert('guests-alert', 'Este convidado já está na lista.'); return;
-  }
-  data.guests.push({ name, type });
-  saveData();
-  document.getElementById('new-guest-name').value = '';
-  renderGuests();
-  showAdminAlert('guests-alert', `${name} adicionado(a) com sucesso.`);
-}
-
-function removeGuest(i) {
-  if (!confirm('Remover este convidado?')) return;
-  data.guests.splice(i, 1);
-  saveData();
-  renderGuests();
-}
-
-function renderGuests() {
+// PAINEL ADMIN — mostra convidados lidos do Sheets
+async function renderAdminGuests() {
   const el = document.getElementById('guest-list-wrap');
-  if (!data.guests.length) {
-    el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhum convidado cadastrado ainda.</p>';
+  el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Carregando…</p>';
+  await fetchGuests();
+
+  if (!guestList.length) {
+    el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhum convidado na planilha ainda.</p>';
     return;
   }
+
   el.innerHTML = `<table class="guest-table">
-    <thead><tr><th>Nome</th><th>Tipo</th><th>Status</th><th></th></tr></thead>
-    <tbody>${data.guests.map((g,i) => {
+    <thead><tr><th>Nome</th><th>Tipo</th><th>Limite</th><th>Status</th></tr></thead>
+    <tbody>${guestList.map(g => {
       const conf = data.confirmations.find(c => norm(c.name) === norm(g.name));
       const tag = conf ? (conf.resp === 'sim' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>') : '<span class="tag tag-muted">Aguardando</span>';
       const tipo = g.type === 'familia' ? 'Família' : 'Individual';
-      return `<tr><td>${g.name}</td><td style="color:var(--muted)">${tipo}</td><td>${tag}</td><td style="text-align:right"><button class="btn-sm" onclick="removeGuest(${i})">Remover</button></td></tr>`;
+      const limite = g.type === 'familia' ? g.limit + ' pess.' : '—';
+      return `<tr><td>${g.name}</td><td style="color:var(--muted)">${tipo}</td><td style="color:var(--muted);text-align:center">${limite}</td><td>${tag}</td></tr>`;
     }).join('')}</tbody>
-  </table>`;
+  </table>
+  <p style="font-size:0.72rem;color:var(--muted);font-weight:200;margin-top:1rem;letter-spacing:0.05em;">Para adicionar ou remover convidados, edite diretamente a aba "Convidados" na planilha do Google Sheets.</p>`;
 }
 
-// CONFIRMAÇÕES — lê do Google Sheets (fonte definitiva)
+// CONFIRMAÇÕES — lê do Google Sheets
 async function fetchAndRenderConfirmations() {
   const el = document.getElementById('conf-table-wrap');
   el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Carregando confirmações…</p>';
@@ -1113,16 +1129,17 @@ async function fetchAndRenderConfirmations() {
     const d = await r.json();
     confirmList = d.confirmacoes || [];
   } catch(e) {
-    // fallback para dados locais se Sheets falhar
     confirmList = data.confirmations.map(c => ({ ...c, resp: c.resp === 'sim' ? 'Confirmado' : 'Não virá' }));
   }
+
+  if (!guestList.length) await fetchGuests();
 
   const sim = confirmList.filter(c => c.resp === 'Confirmado');
   const nao = confirmList.filter(c => c.resp === 'Não virá');
   const totalPess = sim.reduce((a,c) => a + 1 + (parseInt(c.plus)||0), 0);
 
-  document.getElementById('m-total').textContent = data.guests.length;
-  document.getElementById('m-sim').textContent = sim.length + (totalPess > sim.length ? ` · ${totalPess} pess.` : '');
+  document.getElementById('m-total').textContent = guestList.length || data.confirmations.length;
+  document.getElementById('m-sim').textContent = sim.length + (totalPess > sim.length ? ' · ' + totalPess + ' pess.' : '');
   document.getElementById('m-nao').textContent = nao.length;
 
   if (!confirmList.length) {
