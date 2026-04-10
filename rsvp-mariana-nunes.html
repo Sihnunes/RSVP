@@ -112,16 +112,15 @@
     font-size: clamp(2.2rem, 5vw, 3.2rem);
     font-weight: 300;
     color: var(--deep);
-    line-height: 1.1;
+    line-height: 1.15;
   }
 
   .rsvp-header h1 em {
-    display: block;
-    font-size: 0.5em;
+    display: inline;
+    font-size: 1em;
     font-style: italic;
-    color: var(--rose);
-    margin-top: 0.4em;
-    letter-spacing: 0.05em;
+    color: var(--deep);
+    letter-spacing: 0.01em;
   }
 
   .ornament {
@@ -290,13 +289,13 @@
   }
 
   .btn-rsvp.decline {
-    border-color: var(--border);
-    color: var(--muted);
+    border-color: var(--rose);
+    color: var(--rose);
   }
 
   .btn-rsvp.decline:hover {
-    background: var(--champagne);
-    color: var(--muted);
+    background: var(--rose);
+    color: #fff;
   }
 
   .prazo {
@@ -715,6 +714,15 @@
     footer { flex-direction: column; gap: 0.75rem; text-align: center; }
     .admin-tabs li a { padding: 0 0.75rem; font-size: 0.58rem; }
     .export-row { flex-direction: column; align-items: flex-start; }
+    .field-label { font-size: 0.7rem; letter-spacing: 0.15em; }
+    .field-input { font-size: 1.25rem; padding: 0.75rem 0; }
+    .select-input { font-size: 1rem; padding: 0.75rem 0; }
+    .form-intro { font-size: 0.92rem; }
+    .prazo { font-size: 0.75rem; }
+    .section-label { font-size: 0.7rem; }
+    .btn-rsvp { padding: 1.1rem 2rem; font-size: 0.75rem; letter-spacing: 0.18em; width: 100%; }
+    .btn-group { flex-direction: column; gap: 0.75rem; }
+    .form-block h2 { font-size: 2rem; }
   }
 </style>
 </head>
@@ -733,7 +741,7 @@
 
     <div class="rsvp-header">
       <span class="section-label">Mariana Nunes · XV Anos</span>
-      <h1>Confirmação de <em>Presença</em></h1>
+      <h1><em>Confirmação de Presença</em></h1>
     </div>
 
     <div class="ornament" style="margin-bottom: 3rem">· ✦ ·</div>
@@ -954,12 +962,20 @@ async function fetchGuests() {
   try {
     const r = await fetch(CSV_URL + '&t=' + Date.now());
     const text = await r.text();
-    const lines = text.trim().split('\n').slice(1); // pula cabeçalho
+    const lines = text.trim().split('\n').slice(1);
     guestList = lines
       .filter(l => l.trim())
       .map(l => {
-        const cols = l.split(',').map(c => c.replace(/^"|"$/g,'').trim());
-        return { name: cols[0], type: (cols[1]||'individual').toLowerCase(), limit: parseInt(cols[2])||0 };
+        // Parser robusto para CSV com campos entre aspas
+        const cols = [];
+        let cur = '', inQ = false;
+        for (let i = 0; i < l.length; i++) {
+          if (l[i] === '"') { inQ = !inQ; }
+          else if (l[i] === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += l[i]; }
+        }
+        cols.push(cur.trim());
+        return { name: cols[0]||'', type: (cols[1]||'individual').toLowerCase().trim(), limit: parseInt(cols[2])||0 };
       })
       .filter(g => g.name);
   } catch(e) { guestList = []; }
@@ -1133,7 +1149,8 @@ async function fetchAndRenderConfirmations() {
 
   try {
     const r = await fetch(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
-    const d = await r.json();
+    const text = await r.text();
+    const d = JSON.parse(text);
     confirmList = d.confirmacoes || [];
   } catch(e) {
     confirmList = data.confirmations.map(c => ({ ...c, resp: c.resp === 'sim' ? 'Confirmado' : 'Não virá' }));
