@@ -931,9 +931,9 @@
 
 <script>
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxH6PFxkQOKvtqSkTiuTuss2jovIYkQj9KeL3ch2nw5cM-oiG8YsMsODEokC4kwBNVEXw/exec';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQDGdtEv4fpAQqs2elUMdu1m2w_gSUbt37WkA7_-BSGFrwqP3DLZ9cMtdUaUel8DNPIW11Z-oJ9JqGE/pub?gid=0&single=true&output=csv';
 const SK = 'rsvp_mariana_v3';
 
-// Config e confirmações locais no localStorage
 function loadData() {
   try { const r = localStorage.getItem(SK); if (r) return JSON.parse(r); } catch(e) {}
   return {
@@ -944,17 +944,24 @@ function loadData() {
 function saveData() { localStorage.setItem(SK, JSON.stringify(data)); }
 
 let data = loadData();
-let guestList = []; // vem do Sheets
+let guestList = [];
 let confirmList = [];
 
 function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
 
-// Busca convidados do Sheets
+// Busca convidados via CSV público (sem problema de CORS)
 async function fetchGuests() {
   try {
-    const r = await fetch(SHEET_URL + '?t=' + Date.now());
-    const d = await r.json();
-    if (d.ok) guestList = d.convidados || [];
+    const r = await fetch(CSV_URL + '&t=' + Date.now());
+    const text = await r.text();
+    const lines = text.trim().split('\n').slice(1); // pula cabeçalho
+    guestList = lines
+      .filter(l => l.trim())
+      .map(l => {
+        const cols = l.split(',').map(c => c.replace(/^"|"$/g,'').trim());
+        return { name: cols[0], type: (cols[1]||'individual').toLowerCase(), limit: parseInt(cols[2])||0 };
+      })
+      .filter(g => g.name);
   } catch(e) { guestList = []; }
 }
 
