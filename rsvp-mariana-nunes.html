@@ -975,7 +975,9 @@ async function fetchGuests() {
           else { cur += l[i]; }
         }
         cols.push(cur.trim());
-        return { name: cols[0]||'', type: (cols[1]||'individual').toLowerCase().trim(), limit: parseInt(cols[2])||0 };
+        const rawType = (cols[1]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+        const type = rawType.includes('fam') ? 'familia' : 'individual';
+        return { name: cols[0]||'', type, limit: parseInt(cols[2])||0 };
       })
       .filter(g => g.name);
   } catch(e) { guestList = []; }
@@ -1022,7 +1024,8 @@ document.getElementById('guest-name').addEventListener('input', async function()
   const guest = guestList.find(x => norm(x.name) === norm(name));
   const ps = document.getElementById('plus-section');
 
-  if (guest && guest.type === 'familia' && guest.limit > 1) {
+  const isFamGuest = guest && guest.type && guest.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
+  if (isFamGuest && guest.limit > 1) {
     // Monta opções até o limite da família
     const sel = document.getElementById('plus-ones');
     sel.innerHTML = '';
@@ -1055,7 +1058,8 @@ async function submitRSVP(resp) {
   document.getElementById('rsvp-alert').classList.remove('visible');
 
   const plusEl = document.getElementById('plus-ones');
-  const plus = (guest.type === 'familia' && guest.limit > 1) ? parseInt(plusEl.value) || 0 : 0;
+  const isFamSub = guest.type && guest.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
+  const plus = (isFamSub && guest.limit > 1) ? parseInt(plusEl.value) || 0 : 0;
   const date = new Date().toLocaleString('pt-BR');
   const entry = { name: guest.name, phone, resp, plus, date };
 
@@ -1134,8 +1138,9 @@ async function renderAdminGuests() {
     <tbody>${guestList.map(g => {
       const conf = data.confirmations.find(c => norm(c.name) === norm(g.name));
       const tag = conf ? (conf.resp === 'sim' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>') : '<span class="tag tag-muted">Aguardando</span>';
-      const tipo = g.type === 'familia' ? 'Família' : 'Individual';
-      const limite = g.type === 'familia' ? g.limit + ' pess.' : '—';
+      const isFam = g.type && g.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
+      const tipo = isFam ? 'Família' : 'Individual';
+      const limite = isFam ? g.limit + ' pess.' : '—';
       return `<tr><td>${g.name}</td><td style="color:var(--muted)">${tipo}</td><td style="color:var(--muted);text-align:center">${limite}</td><td>${tag}</td></tr>`;
     }).join('')}</tbody>
   </table>
@@ -1158,11 +1163,15 @@ async function fetchAndRenderConfirmations() {
 
   if (!guestList.length) await fetchGuests();
 
+  // Merge: Sheets + local (evita perda se Sheets falhar)
+  const localMapped = data.confirmations.map(c => ({ ...c, resp: c.resp === 'sim' ? 'Confirmado' : 'Não virá' }));
+  if (!confirmList.length) confirmList = localMapped;
+
   const sim = confirmList.filter(c => c.resp === 'Confirmado');
   const nao = confirmList.filter(c => c.resp === 'Não virá');
   const totalPess = sim.reduce((a,c) => a + 1 + (parseInt(c.plus)||0), 0);
 
-  document.getElementById('m-total').textContent = guestList.length || data.confirmations.length;
+  document.getElementById('m-total').textContent = guestList.length || '—';
   document.getElementById('m-sim').textContent = sim.length + (totalPess > sim.length ? ' · ' + totalPess + ' pess.' : '');
   document.getElementById('m-nao').textContent = nao.length;
 
