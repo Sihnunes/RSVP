@@ -1124,12 +1124,12 @@ async function submitRSVP(resp) {
   data.confirmations.push(entry);
   saveData();
 
-  fetch(SHEET_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'confirmar', ...entry })
-  }).catch(() => {});
+  // Usa XMLHttpRequest com form-data para contornar CORS
+  const form = new FormData();
+  form.append('payload', JSON.stringify({ action: 'confirmar', ...entry }));
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', SHEET_URL, true);
+  xhr.send(form);
 
   document.getElementById('rsvp-form-block').style.display = 'none';
   document.querySelector('.admin-link').style.display = 'none';
