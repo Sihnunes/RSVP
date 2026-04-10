@@ -94,7 +94,7 @@
 
   .rsvp-header {
     text-align: center;
-    margin-bottom: 4rem;
+    margin-bottom: 1.5rem;
   }
 
   .section-label {
@@ -744,7 +744,7 @@
       <h1><em>Confirmação de Presença</em></h1>
     </div>
 
-    <div class="ornament" style="margin-bottom: 3rem">· ✦ ·</div>
+    <div class="ornament" style="margin-bottom: 1.5rem">· ✦ ·</div>
 
     <div class="form-block" id="rsvp-form-block">
       <h2>Você <em>vai vir?</em></h2>
@@ -1077,7 +1077,7 @@ function updateChildrenSelect(maxLimit) {
   const sel = document.getElementById('children-count');
   const prev = parseInt(sel.value) || 0;
   sel.innerHTML = '';
-  for (let i = 0; i <= total; i++) {
+  for (let i = 0; i <= total - 1; i++) {
     const opt = document.createElement('option');
     opt.value = i;
     opt.textContent = i === 0 ? 'Nenhuma criança' : `${i} criança${i > 1 ? 's' : ''}`;
