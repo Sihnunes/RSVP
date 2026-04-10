@@ -707,7 +707,7 @@
     .nav-links li a { padding: 0 0.75rem; font-size: 0.58rem; }
     .form-block { padding: 2rem 1.25rem; }
     .config-grid { grid-template-columns: 1fr; }
-    .metrics-grid { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: 1fr 1fr !important; }
     .metric-card { border-right: none; border-bottom: 0.5px solid var(--border); }
     .metric-card:last-child { border-bottom: none; }
     .add-guest-row { flex-direction: column; }
@@ -789,7 +789,7 @@
             <option value="3">3 crianças</option>
           </select>
         </div>
-        <p style="font-size:0.72rem;color:var(--muted);font-weight:200;letter-spacing:0.05em;margin-top:-0.5rem;font-style:italic;">Crianças até 7 anos não são cobradas.</p>
+
       </div>
 
       <div class="btn-group">
@@ -921,18 +921,22 @@
 
     <!-- TAB CONFIRMAÇÕES -->
     <div class="tab-panel" id="tab-confirmacoes">
-      <div class="metrics-grid" id="metrics-grid">
+      <div class="metrics-grid" id="metrics-grid" style="grid-template-columns: repeat(4,1fr);">
         <div class="metric-card">
           <div class="metric-num" id="m-total">—</div>
           <span class="metric-lbl">Convidados</span>
         </div>
         <div class="metric-card">
           <div class="metric-num green" id="m-sim">—</div>
-          <span class="metric-lbl">Confirmados</span>
+          <span class="metric-lbl">Total pessoas</span>
         </div>
         <div class="metric-card">
-          <div class="metric-num rose" id="m-nao">—</div>
-          <span class="metric-lbl">Não virão</span>
+          <div class="metric-num green" id="m-adults">—</div>
+          <span class="metric-lbl">Adultos</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num rose" id="m-children">—</div>
+          <span class="metric-lbl">Crianças</span>
         </div>
       </div>
 
@@ -1138,11 +1142,22 @@ function showRSVPAlert(msg) {
   el.classList.add('visible');
 }
 
-// ADMIN LOGIN
+// ADMIN SESSION
+const SESSION_KEY = 'rsvp_admin_session';
+
+function checkSession() {
+  try {
+    const s = sessionStorage.getItem(SESSION_KEY);
+    if (s === 'ok') { showPage('admin'); return true; }
+  } catch(e) {}
+  return false;
+}
+
 function doLogin() {
   const pass = document.getElementById('admin-pass').value;
   if (pass === data.config.pass) {
     document.getElementById('admin-pass').value = '';
+    try { sessionStorage.setItem(SESSION_KEY, 'ok'); } catch(e) {}
     showPage('admin');
   } else {
     const el = document.getElementById('login-alert');
@@ -1152,7 +1167,10 @@ function doLogin() {
   }
 }
 
-function doLogout() { showPage('rsvp'); }
+function doLogout() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+  showPage('rsvp');
+}
 
 // CONFIG
 function loadConfigFields() {
@@ -1222,12 +1240,15 @@ async function fetchAndRenderConfirmations() {
   if (!confirmList.length) confirmList = localMapped;
 
   const sim = confirmList.filter(c => c.resp === 'Confirmado');
-  const nao = confirmList.filter(c => c.resp === 'Não virá');
   const totalPess = sim.reduce((a,c) => a + 1 + (parseInt(c.plus)||0), 0);
+  const totalAdults = sim.reduce((a,c) => a + (parseInt(c.adults) || (1 + (parseInt(c.plus)||0))), 0);
+  const totalChildren = sim.reduce((a,c) => a + (parseInt(c.children)||0), 0);
+  const nao = confirmList.filter(c => c.resp === 'Não virá');
 
   document.getElementById('m-total').textContent = guestList.length || '—';
-  document.getElementById('m-sim').textContent = sim.length + (totalPess > sim.length ? ' · ' + totalPess + ' pess.' : '');
-  document.getElementById('m-nao').textContent = nao.length;
+  document.getElementById('m-sim').textContent = totalPess || sim.length;
+  document.getElementById('m-adults').textContent = totalAdults;
+  document.getElementById('m-children').textContent = totalChildren;
 
   if (!confirmList.length) {
     el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhuma confirmação recebida ainda.</p>';
@@ -1235,15 +1256,21 @@ async function fetchAndRenderConfirmations() {
   }
 
   el.innerHTML = `<table class="conf-table">
-    <thead><tr><th>Nome</th><th>Telefone</th><th>Resposta</th><th>Acomp.</th><th>Data</th></tr></thead>
-    <tbody>${confirmList.map(c => `
-      <tr>
+    <thead><tr><th>Nome</th><th>Telefone</th><th>Resposta</th><th>Total</th><th>Adultos</th><th>Crianças</th><th>Data</th></tr></thead>
+    <tbody>${confirmList.map(c => {
+      const total = c.resp === 'Confirmado' ? 1 + (parseInt(c.plus)||0) : 0;
+      const children = parseInt(c.children)||0;
+      const adults = parseInt(c.adults) || (total - children);
+      return `<tr>
         <td>${c.name}</td>
         <td style="color:var(--muted)">${c.phone || '—'}</td>
         <td>${c.resp === 'Confirmado' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>'}</td>
-        <td style="color:var(--muted);text-align:center">${parseInt(c.plus) > 0 ? '+'+c.plus : '—'}</td>
+        <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? total : '—'}</td>
+        <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? adults : '—'}</td>
+        <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? children : '—'}</td>
         <td style="color:var(--muted);font-size:0.72rem">${c.date}</td>
-      </tr>`).join('')}
+      </tr>`;
+    }).join('')}
     </tbody>
   </table>`;
 }
@@ -1265,6 +1292,9 @@ function showAdminAlert(id, msg) {
   el.classList.add('visible');
   setTimeout(() => el.classList.remove('visible'), 3500);
 }
+
+// Restaura sessão admin ao recarregar
+checkSession();
 </script>
 
 </body>
