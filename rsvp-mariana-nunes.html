@@ -748,7 +748,7 @@
 
     <div class="form-block" id="rsvp-form-block">
       <h2>Você <em>vai vir?</em></h2>
-      <p class="form-intro">Confirme sua presença até o dia 28 de novembro de 2026. Sua presença é o maior presente.</p>
+      <p class="form-intro">Confirme sua presença até o dia 20 de novembro de 2026. Sua presença é o maior presente.</p>
 
       <div id="rsvp-alert" class="alert-msg"></div>
 
@@ -778,12 +778,26 @@
         </div>
       </div>
 
+      <div class="plus-section" id="children-section">
+        <div class="field-group">
+          <label class="field-label">Quantas são crianças até 7 anos?</label>
+          <div class="field-rule"></div>
+          <select class="select-input" id="children-count">
+            <option value="0">Nenhuma criança</option>
+            <option value="1">1 criança</option>
+            <option value="2">2 crianças</option>
+            <option value="3">3 crianças</option>
+          </select>
+        </div>
+        <p style="font-size:0.72rem;color:var(--muted);font-weight:200;letter-spacing:0.05em;margin-top:-0.5rem;font-style:italic;">Crianças até 7 anos não são cobradas.</p>
+      </div>
+
       <div class="btn-group">
         <button class="btn-rsvp" onclick="submitRSVP('sim')">Confirmar presença</button>
         <button class="btn-rsvp decline" onclick="submitRSVP('nao')">Não poderei ir</button>
       </div>
 
-      <p class="prazo">Prazo · 28 de novembro de 2026</p>
+      <p class="prazo">Prazo · 20 de novembro de 2026</p>
     </div>
 
     <div class="feedback" id="feedback-sim">
@@ -872,7 +886,7 @@
         <div class="field-group">
           <label class="field-label">Prazo de confirmação</label>
           <div class="field-rule"></div>
-          <input type="text" class="field-input" id="cfg-prazo" placeholder="Ex: 28 de novembro de 2026" />
+          <input type="text" class="field-input" id="cfg-prazo" placeholder="Ex: 20 de novembro de 2026" />
         </div>
         <div class="field-group">
           <label class="field-label">Nova senha de acesso</label>
@@ -945,7 +959,7 @@ const SK = 'rsvp_mariana_v3';
 function loadData() {
   try { const r = localStorage.getItem(SK); if (r) return JSON.parse(r); } catch(e) {}
   return {
-    config: { name: 'Mariana Nunes', date: '10 de Dezembro de 2026', local: 'Casa Tarumã, São Paulo', prazo: '28 de novembro de 2026', pass: 'admin123' },
+    config: { name: 'Mariana Nunes', date: '10 de Dezembro de 2026', local: 'Casa Tarumã, São Paulo', prazo: '20 de novembro de 2026', pass: 'admin123' },
     confirmations: []
   };
 }
@@ -966,7 +980,6 @@ async function fetchGuests() {
     guestList = lines
       .filter(l => l.trim())
       .map(l => {
-        // Parser robusto para CSV com campos entre aspas
         const cols = [];
         let cur = '', inQ = false;
         for (let i = 0; i < l.length; i++) {
@@ -981,6 +994,16 @@ async function fetchGuests() {
       })
       .filter(g => g.name);
   } catch(e) { guestList = []; }
+}
+
+// Busca confirmações do Sheets para verificar duplicatas
+async function fetchConfirmationsFromSheet() {
+  try {
+    const r = await fetch(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
+    const text = await r.text();
+    const d = JSON.parse(text);
+    return d.confirmacoes || [];
+  } catch(e) { return []; }
 }
 
 function showPage(id) {
@@ -1026,19 +1049,43 @@ document.getElementById('guest-name').addEventListener('input', async function()
 
   const isFamGuest = guest && guest.type && guest.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
   if (isFamGuest && guest.limit > 1) {
-    // Monta opções até o limite da família
     const sel = document.getElementById('plus-ones');
     sel.innerHTML = '';
     for (let i = 1; i <= guest.limit; i++) {
       const opt = document.createElement('option');
-      opt.value = i - 1; // acompanhantes = total - 1
+      opt.value = i - 1;
       opt.textContent = i === 1 ? 'Apenas eu' : `Eu + ${i - 1} acompanhante${i - 1 > 1 ? 's' : ''}`;
       sel.appendChild(opt);
     }
     ps.classList.add('visible');
+    document.getElementById('children-section').classList.add('visible');
+    updateChildrenSelect(guest.limit);
   } else {
     ps.classList.remove('visible');
+    document.getElementById('children-section').classList.remove('visible');
   }
+});
+
+// Atualiza opções de crianças conforme total de pessoas selecionado
+function updateChildrenSelect(maxLimit) {
+  const plusVal = parseInt(document.getElementById('plus-ones').value) || 0;
+  const total = plusVal + 1; // acompanhantes + quem confirma
+  const sel = document.getElementById('children-count');
+  const prev = parseInt(sel.value) || 0;
+  sel.innerHTML = '';
+  for (let i = 0; i <= total; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i === 0 ? 'Nenhuma criança' : `${i} criança${i > 1 ? 's' : ''}`;
+    sel.appendChild(opt);
+  }
+  sel.value = Math.min(prev, total);
+}
+
+document.getElementById('plus-ones').addEventListener('change', function() {
+  const name = document.getElementById('guest-name').value.trim();
+  const guest = guestList.find(g => norm(g.name) === norm(name));
+  if (guest) updateChildrenSelect(guest.limit);
 });
 
 async function submitRSVP(resp) {
@@ -1048,20 +1095,27 @@ async function submitRSVP(resp) {
   if (!name) { showRSVPAlert('Por favor, informe seu nome completo.'); return; }
   if (!phone || phone.replace(/\D/g,'').length < 10) { showRSVPAlert('Por favor, informe um telefone válido.'); return; }
 
-  // Busca lista atualizada do Sheets
+  // Busca lista e confirmações atualizadas
   showRSVPAlert('Verificando sua presença na lista…');
   await fetchGuests();
 
   const guest = guestList.find(g => norm(g.name) === norm(name));
   if (!guest) { showRSVPAlert('Seu nome não foi encontrado na lista de convidados. Verifique com a organização.'); return; }
 
+  // Verifica duplicata no Sheets
+  const sheetsConfs = await fetchConfirmationsFromSheet();
+  const alreadyConfirmed = sheetsConfs.find(c => norm(c.name) === norm(name));
+  if (alreadyConfirmed) { showRSVPAlert('Você já enviou sua confirmação anteriormente. Obrigada!'); return; }
+
   document.getElementById('rsvp-alert').classList.remove('visible');
 
   const plusEl = document.getElementById('plus-ones');
   const isFamSub = guest.type && guest.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
   const plus = (isFamSub && guest.limit > 1) ? parseInt(plusEl.value) || 0 : 0;
+  const children = (isFamSub && guest.limit > 1) ? parseInt(document.getElementById('children-count').value) || 0 : 0;
+  const adults = (plus + 1) - children;
   const date = new Date().toLocaleString('pt-BR');
-  const entry = { name: guest.name, phone, resp, plus, date };
+  const entry = { name: guest.name, phone, resp, plus, children, adults, date };
 
   data.confirmations.push(entry);
   saveData();
