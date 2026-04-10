@@ -1,1 +1,1301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mariana Nunes · Confirmação de Presença</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  :root {
+    --blush: #f2e4e4;
+    --rose: #b08898;
+    --champagne: #f8f0f0;
+    --cream: #fdf8f8;
+    --deep: #0e0a0a;
+    --text: #1e1616;
+    --muted: #5a4545;
+    --gold: #a0783a;
+    --border: rgba(176,136,152,0.18);
+  }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: #fff;
+    color: var(--deep);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #fff;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 3rem;
+    height: 60px;
+  }
+
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--deep);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0;
+    list-style: none;
+  }
+
+  .nav-links li a {
+    display: block;
+    padding: 0 1.25rem;
+    height: 60px;
+    line-height: 60px;
+    font-size: 0.65rem;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1.5px solid transparent;
+    transition: color 0.25s, border-color 0.25s;
+    cursor: pointer;
+  }
+
+  .nav-links li a:hover,
+  .nav-links li a.active {
+    color: var(--deep);
+    border-bottom-color: var(--gold);
+  }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===================== CONFIRMAÇÃO ===================== */
+  .rsvp-page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 5rem 2rem 6rem;
+  }
+
+  .rsvp-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+
+  .rsvp-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    font-weight: 300;
+    color: var(--deep);
+    line-height: 1.15;
+  }
+
+  .rsvp-header h1 em {
+    display: inline;
+    font-size: 1em;
+    font-style: italic;
+    color: var(--deep);
+    letter-spacing: 0.01em;
+  }
+
+  .ornament {
+    text-align: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    color: var(--gold);
+    letter-spacing: 0.5em;
+    opacity: 0.45;
+    margin: 0;
+  }
+
+  /* FORM BLOCK */
+  .form-block {
+    border: 0.5px solid var(--border);
+    padding: 3rem;
+    margin-top: 3rem;
+  }
+
+  .form-block h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: var(--deep);
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-block h2 em { font-style: italic; }
+
+  .form-intro {
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.85;
+    text-align: center;
+    max-width: 400px;
+    margin: 0 auto 2.5rem;
+  }
+
+  .field-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .field-label {
+    font-size: 0.58rem;
+    font-weight: 300;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .field-rule {
+    height: 0.5px;
+    background: var(--border);
+    margin-bottom: 0.6rem;
+  }
+
+  .field-input {
+    width: 100%;
+    border: none;
+    border-bottom: 0.5px solid var(--border);
+    background: transparent;
+    padding: 0.6rem 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--deep);
+    outline: none;
+    transition: border-color 0.25s;
+  }
+
+  .field-input::placeholder {
+    color: var(--muted);
+    opacity: 0.5;
+    font-style: italic;
+  }
+
+  .field-input:focus {
+    border-bottom-color: var(--rose);
+  }
+
+  .plus-section {
+    display: none;
+    margin-bottom: 1.5rem;
+  }
+
+  .plus-section.visible { display: block; }
+
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+  }
+
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+  }
+
+  .radio-option input[type="radio"] {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 0.5px solid var(--rose);
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .radio-option input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background: var(--rose);
+    border-radius: 50%;
+  }
+
+  .radio-option span {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--deep);
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-rsvp {
+    display: inline-block;
+    padding: 0.9rem 2.75rem;
+    border: 0.5px solid var(--rose);
+    color: var(--rose);
+    font-size: 0.65rem;
+    font-weight: 300;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    text-decoration: none;
+    font-family: 'Jost', sans-serif;
+    transition: all 0.3s;
+    cursor: pointer;
+    background: transparent;
+  }
+
+  .btn-rsvp:hover {
+    background: var(--rose);
+    color: #fff;
+  }
+
+  .btn-rsvp.decline {
+    border-color: var(--rose);
+    color: var(--rose);
+  }
+
+  .btn-rsvp.decline:hover {
+    background: var(--rose);
+    color: #fff;
+  }
+
+  .prazo {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 200;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    opacity: 0.7;
+    text-transform: uppercase;
+  }
+
+  /* FEEDBACK STATES */
+  .feedback {
+    display: none;
+    text-align: center;
+    padding: 2.5rem 1rem;
+  }
+
+  .feedback.visible { display: block; }
+
+  .feedback-icon {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem;
+    color: var(--gold);
+    opacity: 0.4;
+    letter-spacing: 0.5em;
+    margin-bottom: 1.5rem;
+  }
+
+  .feedback h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.9rem;
+    font-weight: 300;
+    color: var(--deep);
+    margin-bottom: 0.75rem;
+  }
+
+  .feedback h3 em { font-style: italic; }
+
+  .feedback p {
+    font-size: 0.82rem;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.85;
+  }
+
+  .alert-msg {
+    display: none;
+    border: 0.5px solid var(--border);
+    border-left: 2px solid var(--rose);
+    background: var(--champagne);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  .alert-msg.visible { display: block; }
+
+  /* ===================== ADMIN LOGIN ===================== */
+  .login-page {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 5rem 2rem 6rem;
+  }
+
+  .login-page .rsvp-header { margin-bottom: 3rem; }
+
+  /* ===================== PAINEL ADMIN ===================== */
+  .admin-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 4rem 2rem 6rem;
+  }
+
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-bottom: 0.5px solid var(--border);
+    padding-bottom: 2rem;
+  }
+
+  .admin-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+    font-weight: 300;
+    color: var(--deep);
+  }
+
+  .admin-header h1 em { font-style: italic; color: var(--rose); }
+
+  .admin-tabs {
+    display: flex;
+    gap: 0;
+    list-style: none;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 2.5rem;
+  }
+
+  .admin-tabs li a {
+    display: block;
+    padding: 0 1.5rem;
+    height: 48px;
+    line-height: 48px;
+    font-size: 0.62rem;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 1.5px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .admin-tabs li a:hover,
+  .admin-tabs li a.active {
+    color: var(--deep);
+    border-bottom-color: var(--gold);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* METRICS */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border: 0.5px solid var(--border);
+    margin-bottom: 3rem;
+  }
+
+  .metric-card {
+    padding: 2rem 1.5rem;
+    text-align: center;
+    border-right: 0.5px solid var(--border);
+  }
+
+  .metric-card:last-child { border-right: none; }
+
+  .metric-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.8rem;
+    font-weight: 300;
+    color: var(--deep);
+    line-height: 1;
+  }
+
+  .metric-num.green { color: #6b9e6b; }
+  .metric-num.rose { color: var(--rose); }
+
+  .metric-lbl {
+    font-size: 0.58rem;
+    font-weight: 200;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    display: block;
+  }
+
+  /* CONFIG FORM */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem 2.5rem;
+    margin-bottom: 2rem;
+  }
+
+  /* GUEST LIST */
+  .add-guest-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    border: 0.5px solid var(--border);
+    padding: 1.5rem 2rem;
+    background: var(--cream);
+  }
+
+  .add-guest-row .field-group { margin-bottom: 0; flex: 1; }
+
+  .guest-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  .guest-table th {
+    font-size: 0.58rem;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .guest-table td {
+    padding: 0.85rem 0.75rem;
+    border-bottom: 0.5px solid var(--border);
+    color: var(--text);
+    font-weight: 300;
+    vertical-align: middle;
+  }
+
+  .guest-table tr:last-child td { border-bottom: none; }
+
+  .guest-table tr:hover td { background: var(--cream); }
+
+  .tag {
+    font-size: 0.58rem;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    display: inline-block;
+  }
+
+  .tag-green { background: rgba(107,158,107,0.12); color: #5a8a5a; }
+  .tag-rose { background: rgba(176,136,152,0.12); color: var(--rose); }
+  .tag-muted { background: var(--champagne); color: var(--muted); }
+
+  /* CONFIRMATIONS TABLE */
+  .conf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  .conf-table th {
+    font-size: 0.58rem;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .conf-table td {
+    padding: 0.9rem 0.75rem;
+    border-bottom: 0.5px solid var(--border);
+    color: var(--text);
+    font-weight: 300;
+    vertical-align: middle;
+  }
+
+  .conf-table tr:last-child td { border-bottom: none; }
+  .conf-table tr:hover td { background: var(--cream); }
+
+  /* BUTTONS */
+  .btn-admin {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    border: 0.5px solid var(--rose);
+    color: var(--rose);
+    font-size: 0.62rem;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: 'Jost', sans-serif;
+    transition: all 0.3s;
+    cursor: pointer;
+    background: transparent;
+  }
+
+  .btn-admin:hover { background: var(--rose); color: #fff; }
+
+  .btn-sm {
+    padding: 0.4rem 1rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    border: 0.5px solid var(--border);
+    color: var(--muted);
+    font-family: 'Jost', sans-serif;
+    text-transform: uppercase;
+    font-weight: 300;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.2s;
+  }
+
+  .btn-sm:hover { border-color: var(--rose); color: var(--rose); }
+
+  .btn-logout {
+    padding: 0.5rem 1.25rem;
+    border: 0.5px solid var(--border);
+    color: var(--muted);
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.2s;
+  }
+
+  .btn-logout:hover { color: var(--deep); border-color: var(--muted); }
+
+  /* ADMIN ALERT */
+  .admin-alert {
+    display: none;
+    border: 0.5px solid var(--border);
+    border-left: 2px solid var(--gold);
+    background: var(--champagne);
+    padding: 0.85rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.78rem;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  .admin-alert.visible { display: block; }
+
+  .select-input {
+    width: 100%;
+    border: none;
+    border-bottom: 0.5px solid var(--border);
+    background: transparent;
+    padding: 0.6rem 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 300;
+    color: var(--deep);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  .select-input:focus { border-bottom-color: var(--rose); }
+
+  /* EXPORT ROW */
+  .export-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .export-row h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 300;
+    color: var(--deep);
+  }
+
+  .export-row h3 em { font-style: italic; }
+
+  /* FOOTER */
+  footer {
+    border-top: 0.5px solid var(--border);
+    padding: 1.75rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  footer .foot-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--rose);
+  }
+
+  footer .foot-note {
+    font-size: 0.6rem;
+    font-weight: 200;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ADMIN NAV LINK */
+  .admin-link {
+    display: block;
+    text-align: center;
+    margin-top: 3rem;
+    font-size: 0.58rem;
+    font-weight: 200;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0.5;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .admin-link:hover { opacity: 1; }
+
+  @media (max-width: 680px) {
+    nav { padding: 0 1.25rem; }
+    .nav-links li a { padding: 0 0.75rem; font-size: 0.58rem; }
+    .form-block { padding: 2rem 1.25rem; }
+    .config-grid { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: 1fr 1fr !important; }
+    .metric-card { border-right: none; border-bottom: 0.5px solid var(--border); }
+    .metric-card:last-child { border-bottom: none; }
+    .add-guest-row { flex-direction: column; }
+    footer { flex-direction: column; gap: 0.75rem; text-align: center; }
+    .admin-tabs li a { padding: 0 0.75rem; font-size: 0.58rem; }
+    .export-row { flex-direction: column; align-items: flex-start; }
+    .field-label { font-size: 0.7rem; letter-spacing: 0.15em; }
+    .field-input { font-size: 1.25rem; padding: 0.75rem 0; }
+    .select-input { font-size: 1rem; padding: 0.75rem 0; }
+    .form-intro { font-size: 0.92rem; }
+    .prazo { font-size: 0.75rem; }
+    .section-label { font-size: 0.7rem; }
+    .btn-rsvp { padding: 1.1rem 2rem; font-size: 0.75rem; letter-spacing: 0.18em; width: 100%; }
+    .btn-group { flex-direction: column; gap: 0.75rem; }
+    .form-block h2 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo" onclick="showPage('rsvp')">Mariana Nunes</span>
+  <ul class="nav-links">
+    <li><a onclick="showPage('rsvp')" class="active" id="nav-rsvp">Confirmação</a></li>
+  </ul>
+</nav>
+
+<!-- ===================== FORMULÁRIO RSVP ===================== -->
+<div class="page active" id="page-rsvp">
+  <div class="rsvp-page">
+
+    <div class="rsvp-header">
+      <span class="section-label">Mariana Nunes · XV Anos</span>
+      <h1><em>Confirmação de Presença</em></h1>
+    </div>
+
+    <div class="ornament" style="margin-bottom: 3rem">· ✦ ·</div>
+
+    <div class="form-block" id="rsvp-form-block">
+      <h2>Você <em>vai vir?</em></h2>
+      <p class="form-intro">Confirme sua presença até o dia 20 de novembro de 2026. Sua presença é o maior presente.</p>
+
+      <div id="rsvp-alert" class="alert-msg"></div>
+
+      <div class="field-group">
+        <label class="field-label">Nome completo</label>
+        <div class="field-rule"></div>
+        <input type="text" class="field-input" id="guest-name" placeholder="Digite seu nome completo…" autocomplete="off" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Telefone / WhatsApp</label>
+        <div class="field-rule"></div>
+        <input type="tel" class="field-input" id="guest-phone" placeholder="(00) 00000-0000" autocomplete="off" />
+      </div>
+
+      <div class="plus-section" id="plus-section">
+        <div class="field-group">
+          <label class="field-label">Quantas pessoas virão com você?</label>
+          <div class="field-rule"></div>
+          <select class="select-input" id="plus-ones">
+            <option value="0">Apenas eu</option>
+            <option value="1">Eu + 1 acompanhante</option>
+            <option value="2">Eu + 2 acompanhantes</option>
+            <option value="3">Eu + 3 acompanhantes</option>
+            <option value="4">Eu + 4 acompanhantes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="plus-section" id="children-section">
+        <div class="field-group">
+          <label class="field-label">Quantas são crianças até 7 anos?</label>
+          <div class="field-rule"></div>
+          <select class="select-input" id="children-count">
+            <option value="0">Nenhuma criança</option>
+            <option value="1">1 criança</option>
+            <option value="2">2 crianças</option>
+            <option value="3">3 crianças</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-rsvp" onclick="submitRSVP('sim')">Confirmar presença</button>
+        <button class="btn-rsvp decline" onclick="submitRSVP('nao')">Não poderei ir</button>
+      </div>
+
+      <p class="prazo">Prazo · 20 de novembro de 2026</p>
+    </div>
+
+    <div class="feedback" id="feedback-sim">
+      <div class="feedback-icon">· ✦ ·</div>
+      <h3>Até <em>logo!</em></h3>
+      <p>Sua presença foi confirmada com sucesso.<br>Mal podemos esperar para celebrar juntos.</p>
+    </div>
+
+    <div class="feedback" id="feedback-nao">
+      <div class="feedback-icon">· ✦ ·</div>
+      <h3>Entendido, <em>obrigada.</em></h3>
+      <p>Sua ausência foi registrada.<br>Você fará falta nessa noite especial.</p>
+    </div>
+
+    <a class="admin-link" onclick="showPage('admin-login')">Área administrativa</a>
+
+  </div>
+</div>
+
+<!-- ===================== LOGIN ADMIN ===================== -->
+<div class="page" id="page-admin-login">
+  <div class="login-page">
+    <div class="rsvp-header">
+      <span class="section-label">Restrito</span>
+      <h1>Área <em>Administrativa</em></h1>
+    </div>
+
+    <div class="ornament" style="margin-bottom: 3rem">· ✦ ·</div>
+
+    <div class="form-block">
+      <p class="form-intro">Acesso exclusivo para a equipe de organização.</p>
+
+      <div id="login-alert" class="alert-msg"></div>
+
+      <div class="field-group">
+        <label class="field-label">Senha</label>
+        <div class="field-rule"></div>
+        <input type="password" class="field-input" id="admin-pass" placeholder="Digite a senha…" onkeydown="if(event.key==='Enter') doLogin()" />
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-rsvp" onclick="doLogin()">Entrar</button>
+        <button class="btn-rsvp decline" onclick="showPage('rsvp')">Voltar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PAINEL ADMIN ===================== -->
+<div class="page" id="page-admin">
+  <div class="admin-page">
+
+    <div class="admin-header">
+      <div>
+        <span class="section-label">Painel de Gestão</span>
+        <h1>Confirmações <em>de Presença</em></h1>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+
+    <ul class="admin-tabs">
+      <li><a onclick="showTab('tab-config')" id="tab-btn-config" class="active">Configurações</a></li>
+      <li><a onclick="showTab('tab-guests')" id="tab-btn-guests">Convidados</a></li>
+      <li><a onclick="showTab('tab-confirmacoes')" id="tab-btn-confirmacoes">Confirmações</a></li>
+    </ul>
+
+    <!-- TAB CONFIG -->
+    <div class="tab-panel active" id="tab-config">
+      <div id="config-alert" class="admin-alert"></div>
+      <div class="config-grid">
+        <div class="field-group">
+          <label class="field-label">Nome do aniversariante</label>
+          <div class="field-rule"></div>
+          <input type="text" class="field-input" id="cfg-name" placeholder="Ex: Mariana Nunes" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Data do evento</label>
+          <div class="field-rule"></div>
+          <input type="text" class="field-input" id="cfg-date" placeholder="Ex: 10 de Dezembro de 2026" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Local</label>
+          <div class="field-rule"></div>
+          <input type="text" class="field-input" id="cfg-local" placeholder="Ex: Casa Tarumã, São Paulo" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Prazo de confirmação</label>
+          <div class="field-rule"></div>
+          <input type="text" class="field-input" id="cfg-prazo" placeholder="Ex: 20 de novembro de 2026" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Nova senha de acesso</label>
+          <div class="field-rule"></div>
+          <input type="password" class="field-input" id="cfg-pass" placeholder="Deixe em branco para manter" />
+        </div>
+      </div>
+      <button class="btn-admin" onclick="saveConfig()">Salvar configurações</button>
+    </div>
+
+    <!-- TAB CONVIDADOS -->
+    <div class="tab-panel" id="tab-guests">
+      <div id="guests-alert" class="admin-alert"></div>
+      <div class="add-guest-row">
+        <div class="field-group">
+          <label class="field-label">Nome completo</label>
+          <div class="field-rule"></div>
+          <input type="text" class="field-input" id="new-guest-name" placeholder="Nome do convidado…" onkeydown="if(event.key==='Enter') addGuest()" />
+        </div>
+        <div class="field-group" style="width: 180px; flex: none;">
+          <label class="field-label">Tipo</label>
+          <div class="field-rule"></div>
+          <select class="select-input" id="new-guest-type">
+            <option value="individual">Individual</option>
+            <option value="familia">Família (com +)</option>
+          </select>
+        </div>
+        <button class="btn-admin" style="flex-shrink:0; align-self:flex-end;" onclick="addGuest()">Adicionar</button>
+      </div>
+      <div id="guest-list-wrap"></div>
+    </div>
+
+    <!-- TAB CONFIRMAÇÕES -->
+    <div class="tab-panel" id="tab-confirmacoes">
+      <div class="metrics-grid" id="metrics-grid" style="grid-template-columns: repeat(4,1fr);">
+        <div class="metric-card">
+          <div class="metric-num" id="m-total">—</div>
+          <span class="metric-lbl">Convidados</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num green" id="m-sim">—</div>
+          <span class="metric-lbl">Total pessoas</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num green" id="m-adults">—</div>
+          <span class="metric-lbl">Adultos</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num rose" id="m-children">—</div>
+          <span class="metric-lbl">Crianças</span>
+        </div>
+      </div>
+
+      <div class="export-row">
+        <h3>Respostas <em>recebidas</em></h3>
+        <button class="btn-admin" onclick="exportCSV()">↓ Exportar CSV</button>
+      </div>
+      <div id="conf-table-wrap"></div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <span class="foot-name">Mariana Nunes — XV Anos</span>
+  <span class="foot-note">10 · Dezembro · 2026 · São Paulo</span>
+</footer>
+
+<script>
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbx8r3FpTVzNvNPQPWDdmN49wN3KbdNUseoymBFxRDI8_XO1C61OYgen-oTY8Q939iB_zA/exec';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQDGdtEv4fpAQqs2elUMdu1m2w_gSUbt37WkA7_-BSGFrwqP3DLZ9cMtdUaUel8DNPIW11Z-oJ9JqGE/pub?gid=0&single=true&output=csv';
+const SK = 'rsvp_mariana_v3';
+
+function loadData() {
+  try { const r = localStorage.getItem(SK); if (r) return JSON.parse(r); } catch(e) {}
+  return {
+    config: { name: 'Mariana Nunes', date: '10 de Dezembro de 2026', local: 'Casa Tarumã, São Paulo', prazo: '20 de novembro de 2026', pass: 'admin123' },
+    confirmations: []
+  };
+}
+function saveData() { localStorage.setItem(SK, JSON.stringify(data)); }
+
+let data = loadData();
+let guestList = [];
+let confirmList = [];
+
+function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+
+// Busca convidados via CSV público (sem problema de CORS)
+async function fetchGuests() {
+  try {
+    const r = await fetch(CSV_URL + '&t=' + Date.now());
+    const text = await r.text();
+    const lines = text.trim().split('\n').slice(1);
+    guestList = lines
+      .filter(l => l.trim())
+      .map(l => {
+        const cols = [];
+        let cur = '', inQ = false;
+        for (let i = 0; i < l.length; i++) {
+          if (l[i] === '"') { inQ = !inQ; }
+          else if (l[i] === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += l[i]; }
+        }
+        cols.push(cur.trim());
+        const rawType = (cols[1]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+        const type = rawType.includes('fam') ? 'familia' : 'individual';
+        return { name: cols[0]||'', type, limit: parseInt(cols[2])||0 };
+      })
+      .filter(g => g.name);
+  } catch(e) { guestList = []; }
+}
+
+// Busca confirmações do Sheets para verificar duplicatas
+async function fetchConfirmationsFromSheet() {
+  try {
+    const r = await fetch(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
+    const text = await r.text();
+    const d = JSON.parse(text);
+    return d.confirmacoes || [];
+  } catch(e) { return []; }
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const navEl = document.getElementById('nav-' + id);
+  if (navEl) navEl.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'admin') { loadConfigFields(); renderAdminGuests(); showTab('tab-config'); }
+}
+
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.admin-tabs li a').forEach(a => a.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('tab-btn-' + id.replace('tab-','')).classList.add('active');
+  if (id === 'tab-confirmacoes') fetchAndRenderConfirmations();
+  if (id === 'tab-guests') renderAdminGuests();
+}
+
+// FORMAT PHONE
+function fmtPhone(v) {
+  v = v.replace(/\D/g,'');
+  if (v.length <= 10) return v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  return v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+}
+
+document.getElementById('guest-phone').addEventListener('input', function() {
+  this.value = fmtPhone(this.value);
+});
+
+// Ao digitar o nome, busca convidado no Sheets e monta select de acompanhantes
+document.getElementById('guest-name').addEventListener('input', async function() {
+  const name = this.value.trim();
+  if (!name) { document.getElementById('plus-section').classList.remove('visible'); return; }
+
+  // Se lista não carregada ainda, busca
+  if (!guestList.length) await fetchGuests();
+
+  const guest = guestList.find(x => norm(x.name) === norm(name));
+  const ps = document.getElementById('plus-section');
+
+  const isFamGuest = guest && guest.type && guest.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
+  if (isFamGuest && guest.limit > 1) {
+    const sel = document.getElementById('plus-ones');
+    sel.innerHTML = '';
+    for (let i = 1; i <= guest.limit; i++) {
+      const opt = document.createElement('option');
+      opt.value = i - 1;
+      opt.textContent = i === 1 ? 'Apenas eu' : `Eu + ${i - 1} acompanhante${i - 1 > 1 ? 's' : ''}`;
+      sel.appendChild(opt);
+    }
+    ps.classList.add('visible');
+    document.getElementById('children-section').classList.add('visible');
+    updateChildrenSelect(guest.limit);
+  } else {
+    ps.classList.remove('visible');
+    document.getElementById('children-section').classList.remove('visible');
+  }
+});
+
+// Atualiza opções de crianças conforme total de pessoas selecionado
+function updateChildrenSelect(maxLimit) {
+  const plusVal = parseInt(document.getElementById('plus-ones').value) || 0;
+  const total = plusVal + 1; // acompanhantes + quem confirma
+  const sel = document.getElementById('children-count');
+  const prev = parseInt(sel.value) || 0;
+  sel.innerHTML = '';
+  for (let i = 0; i <= total; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i === 0 ? 'Nenhuma criança' : `${i} criança${i > 1 ? 's' : ''}`;
+    sel.appendChild(opt);
+  }
+  sel.value = Math.min(prev, total);
+}
+
+document.getElementById('plus-ones').addEventListener('change', function() {
+  const name = document.getElementById('guest-name').value.trim();
+  const guest = guestList.find(g => norm(g.name) === norm(name));
+  if (guest) updateChildrenSelect(guest.limit);
+});
+
+async function submitRSVP(resp) {
+  const name = document.getElementById('guest-name').value.trim();
+  const phone = document.getElementById('guest-phone').value.trim();
+
+  if (!name) { showRSVPAlert('Por favor, informe seu nome completo.'); return; }
+  if (!phone || phone.replace(/\D/g,'').length < 10) { showRSVPAlert('Por favor, informe um telefone válido.'); return; }
+
+  // Busca lista e confirmações atualizadas
+  showRSVPAlert('Verificando sua presença na lista…');
+  await fetchGuests();
+
+  const guest = guestList.find(g => norm(g.name) === norm(name));
+  if (!guest) { showRSVPAlert('Seu nome não foi encontrado na lista de convidados. Verifique com a organização.'); return; }
+
+  // Verifica duplicata no Sheets
+  const sheetsConfs = await fetchConfirmationsFromSheet();
+  const alreadyConfirmed = sheetsConfs.find(c => norm(c.name) === norm(name));
+  if (alreadyConfirmed) { showRSVPAlert('Você já enviou sua confirmação anteriormente. Obrigada!'); return; }
+
+  document.getElementById('rsvp-alert').classList.remove('visible');
+
+  const plusEl = document.getElementById('plus-ones');
+  const isFamSub = guest.type && guest.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
+  const plus = (isFamSub && guest.limit > 1) ? parseInt(plusEl.value) || 0 : 0;
+  const children = (isFamSub && guest.limit > 1) ? parseInt(document.getElementById('children-count').value) || 0 : 0;
+  const adults = (plus + 1) - children;
+  const date = new Date().toLocaleString('pt-BR');
+  const entry = { name: guest.name, phone, resp, plus, children, adults, date };
+
+  data.confirmations.push(entry);
+  saveData();
+
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'confirmar', ...entry })
+  }).catch(() => {});
+
+  document.getElementById('rsvp-form-block').style.display = 'none';
+  document.querySelector('.admin-link').style.display = 'none';
+  document.getElementById(resp === 'sim' ? 'feedback-sim' : 'feedback-nao').classList.add('visible');
+}
+
+function showRSVPAlert(msg) {
+  const el = document.getElementById('rsvp-alert');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+// ADMIN SESSION
+const SESSION_KEY = 'rsvp_admin_session';
+
+function checkSession() {
+  try {
+    const s = sessionStorage.getItem(SESSION_KEY);
+    if (s === 'ok') { showPage('admin'); return true; }
+  } catch(e) {}
+  return false;
+}
+
+function doLogin() {
+  const pass = document.getElementById('admin-pass').value;
+  if (pass === data.config.pass) {
+    document.getElementById('admin-pass').value = '';
+    try { sessionStorage.setItem(SESSION_KEY, 'ok'); } catch(e) {}
+    showPage('admin');
+  } else {
+    const el = document.getElementById('login-alert');
+    el.textContent = 'Senha incorreta. Tente novamente.';
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 4000);
+  }
+}
+
+function doLogout() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+  showPage('rsvp');
+}
+
+// CONFIG
+function loadConfigFields() {
+  document.getElementById('cfg-name').value = data.config.name || '';
+  document.getElementById('cfg-date').value = data.config.date || '';
+  document.getElementById('cfg-local').value = data.config.local || '';
+  document.getElementById('cfg-prazo').value = data.config.prazo || '';
+}
+
+function saveConfig() {
+  data.config.name = document.getElementById('cfg-name').value.trim();
+  data.config.date = document.getElementById('cfg-date').value.trim();
+  data.config.local = document.getElementById('cfg-local').value.trim();
+  data.config.prazo = document.getElementById('cfg-prazo').value.trim();
+  const np = document.getElementById('cfg-pass').value;
+  if (np) { data.config.pass = np; document.getElementById('cfg-pass').value = ''; }
+  saveData();
+  const el = document.getElementById('config-alert');
+  el.textContent = 'Configurações salvas com sucesso.';
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 3500);
+}
+
+// PAINEL ADMIN — mostra convidados lidos do Sheets
+async function renderAdminGuests() {
+  const el = document.getElementById('guest-list-wrap');
+  el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Carregando…</p>';
+  await fetchGuests();
+
+  if (!guestList.length) {
+    el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhum convidado na planilha ainda.</p>';
+    return;
+  }
+
+  el.innerHTML = `<table class="guest-table">
+    <thead><tr><th>Nome</th><th>Tipo</th><th>Limite</th><th>Status</th></tr></thead>
+    <tbody>${guestList.map(g => {
+      const conf = data.confirmations.find(c => norm(c.name) === norm(g.name));
+      const tag = conf ? (conf.resp === 'sim' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>') : '<span class="tag tag-muted">Aguardando</span>';
+      const isFam = g.type && g.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
+      const tipo = isFam ? 'Família' : 'Individual';
+      const limite = isFam ? g.limit + ' pess.' : '—';
+      return `<tr><td>${g.name}</td><td style="color:var(--muted)">${tipo}</td><td style="color:var(--muted);text-align:center">${limite}</td><td>${tag}</td></tr>`;
+    }).join('')}</tbody>
+  </table>
+  <p style="font-size:0.72rem;color:var(--muted);font-weight:200;margin-top:1rem;letter-spacing:0.05em;">Para adicionar ou remover convidados, edite diretamente a aba "Convidados" na planilha do Google Sheets.</p>`;
+}
+
+// CONFIRMAÇÕES — lê do Google Sheets
+async function fetchAndRenderConfirmations() {
+  const el = document.getElementById('conf-table-wrap');
+  el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Carregando confirmações…</p>';
+
+  try {
+    const r = await fetch(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
+    const text = await r.text();
+    const d = JSON.parse(text);
+    confirmList = d.confirmacoes || [];
+  } catch(e) {
+    confirmList = data.confirmations.map(c => ({ ...c, resp: c.resp === 'sim' ? 'Confirmado' : 'Não virá' }));
+  }
+
+  if (!guestList.length) await fetchGuests();
+
+  // Merge: Sheets + local (evita perda se Sheets falhar)
+  const localMapped = data.confirmations.map(c => ({ ...c, resp: c.resp === 'sim' ? 'Confirmado' : 'Não virá' }));
+  if (!confirmList.length) confirmList = localMapped;
+
+  const sim = confirmList.filter(c => c.resp === 'Confirmado');
+  const totalPess = sim.reduce((a,c) => a + 1 + (parseInt(c.plus)||0), 0);
+  const totalAdults = sim.reduce((a,c) => a + (parseInt(c.adults) || (1 + (parseInt(c.plus)||0))), 0);
+  const totalChildren = sim.reduce((a,c) => a + (parseInt(c.children)||0), 0);
+  const nao = confirmList.filter(c => c.resp === 'Não virá');
+
+  document.getElementById('m-total').textContent = guestList.length || '—';
+  document.getElementById('m-sim').textContent = totalPess || sim.length;
+  document.getElementById('m-adults').textContent = totalAdults;
+  document.getElementById('m-children').textContent = totalChildren;
+
+  if (!confirmList.length) {
+    el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhuma confirmação recebida ainda.</p>';
+    return;
+  }
+
+  el.innerHTML = `<table class="conf-table">
+    <thead><tr><th>Nome</th><th>Telefone</th><th>Resposta</th><th>Total</th><th>Adultos</th><th>Crianças</th><th>Data</th></tr></thead>
+    <tbody>${confirmList.map(c => {
+      const total = c.resp === 'Confirmado' ? 1 + (parseInt(c.plus)||0) : 0;
+      const children = parseInt(c.children)||0;
+      const adults = parseInt(c.adults) || (total - children);
+      return `<tr>
+        <td>${c.name}</td>
+        <td style="color:var(--muted)">${c.phone || '—'}</td>
+        <td>${c.resp === 'Confirmado' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>'}</td>
+        <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? total : '—'}</td>
+        <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? adults : '—'}</td>
+        <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? children : '—'}</td>
+        <td style="color:var(--muted);font-size:0.72rem">${c.date}</td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function exportCSV() {
+  if (!confirmList.length) return;
+  const rows = [['Nome','Telefone','Resposta','Acompanhantes','Data']];
+  confirmList.forEach(c => rows.push([c.name, c.phone||'', c.resp, c.plus||0, c.date]));
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'confirmacoes-mariana.csv';
+  a.click();
+}
+
+function showAdminAlert(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 3500);
+}
+
+// Restaura sessão admin ao recarregar
+checkSession();
+</script>
+
+</body>
+</html>
