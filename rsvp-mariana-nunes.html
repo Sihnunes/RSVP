@@ -1201,6 +1201,12 @@ async function renderAdminGuests() {
   const el = document.getElementById('guest-list-wrap');
   el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Carregando…</p>';
   await fetchGuests();
+  // Carrega confirmações para cruzar status
+  try {
+    const r = await fetch(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
+    const d = await r.json();
+    confirmList = d.confirmacoes || [];
+  } catch(e) {}
 
   if (!guestList.length) {
     el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhum convidado na planilha ainda.</p>';
@@ -1210,8 +1216,8 @@ async function renderAdminGuests() {
   el.innerHTML = `<table class="guest-table">
     <thead><tr><th>Nome</th><th>Tipo</th><th>Limite</th><th>Status</th></tr></thead>
     <tbody>${guestList.map(g => {
-      const conf = data.confirmations.find(c => norm(c.name) === norm(g.name));
-      const tag = conf ? (conf.resp === 'sim' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>') : '<span class="tag tag-muted">Aguardando</span>';
+      const conf = confirmList.find(c => norm(c.name) === norm(g.name));
+      const tag = conf ? (conf.resp === 'Confirmado' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>') : '<span class="tag tag-muted">Aguardando</span>';
       const isFam = g.type && g.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
       const tipo = isFam ? 'Família' : 'Individual';
       const limite = isFam ? g.limit + ' pess.' : '—';
@@ -1270,7 +1276,7 @@ async function fetchAndRenderConfirmations() {
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? total : '—'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? adults : '—'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? children : '—'}</td>
-        <td style="color:var(--muted);font-size:0.72rem">${c.date}</td>
+        <td style="color:var(--muted);font-size:0.72rem">${c.date ? (String(c.date).includes('T') ? new Date(c.date).toLocaleString('pt-BR') : c.date) : '—'}</td>
       </tr>`;
     }).join('')}
     </tbody>
