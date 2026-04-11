@@ -94,7 +94,7 @@
 
   .rsvp-header {
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .section-label {
@@ -152,9 +152,9 @@
   .form-block h2 em { font-style: italic; }
 
   .form-intro {
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     font-weight: 300;
-    color: var(--muted);
+    color: var(--text);
     line-height: 1.85;
     text-align: center;
     max-width: 400px;
@@ -166,11 +166,11 @@
   }
 
   .field-label {
-    font-size: 0.58rem;
-    font-weight: 300;
-    letter-spacing: 0.22em;
+    font-size: 0.68rem;
+    font-weight: 400;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--text);
     display: block;
     margin-bottom: 0.5rem;
   }
@@ -184,13 +184,13 @@
   .field-input {
     width: 100%;
     border: none;
-    border-bottom: 0.5px solid var(--border);
+    border-bottom: 1px solid var(--rose);
     background: transparent;
-    padding: 0.6rem 0;
+    padding: 0.7rem 0;
     font-family: 'Cormorant Garamond', serif;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     font-style: italic;
-    font-weight: 300;
+    font-weight: 400;
     color: var(--deep);
     outline: none;
     transition: border-color 0.25s;
@@ -198,7 +198,7 @@
 
   .field-input::placeholder {
     color: var(--muted);
-    opacity: 0.5;
+    opacity: 0.7;
     font-style: italic;
   }
 
@@ -627,12 +627,13 @@
   .select-input {
     width: 100%;
     border: none;
-    border-bottom: 0.5px solid var(--border);
+    border-bottom: 1px solid var(--rose);
     background: transparent;
-    padding: 0.6rem 0;
-    font-family: 'Jost', sans-serif;
-    font-size: 0.82rem;
-    font-weight: 300;
+    padding: 0.7rem 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-style: italic;
+    font-weight: 400;
     color: var(--deep);
     outline: none;
     cursor: pointer;
@@ -744,8 +745,6 @@
       <h1><em>Confirmação de Presença</em></h1>
     </div>
 
-    <div class="ornament" style="margin-bottom: 1.5rem">· ✦ ·</div>
-
     <div class="form-block" id="rsvp-form-block">
       <h2>Você <em>vai vir?</em></h2>
       <p class="form-intro">Confirme sua presença até o dia 20 de novembro de 2026. Sua presença é o maior presente.</p>
@@ -853,7 +852,7 @@
     <div class="admin-header">
       <div>
         <span class="section-label">Painel de Gestão</span>
-        <h1>Confirmações <em>de Presença</em></h1>
+        <h1>Confirmações <em style="color: var(--deep); font-style: italic;">de Presença</em></h1>
       </div>
       <button class="btn-logout" onclick="doLogout()">Sair</button>
     </div>
@@ -1073,9 +1072,19 @@ document.getElementById('guest-name').addEventListener('input', async function()
 // Atualiza opções de crianças conforme total de pessoas selecionado
 function updateChildrenSelect(maxLimit) {
   const plusVal = parseInt(document.getElementById('plus-ones').value) || 0;
-  const total = plusVal + 1; // acompanhantes + quem confirma
+  const total = plusVal + 1;
+  const childSection = document.getElementById('children-section');
   const sel = document.getElementById('children-count');
   const prev = parseInt(sel.value) || 0;
+
+  // Esconde campo de crianças se vier sozinho
+  if (total <= 1) {
+    childSection.classList.remove('visible');
+    sel.value = 0;
+    return;
+  }
+
+  childSection.classList.add('visible');
   sel.innerHTML = '';
   for (let i = 0; i <= total - 1; i++) {
     const opt = document.createElement('option');
@@ -1083,7 +1092,7 @@ function updateChildrenSelect(maxLimit) {
     opt.textContent = i === 0 ? 'Nenhuma criança' : `${i} criança${i > 1 ? 's' : ''}`;
     sel.appendChild(opt);
   }
-  sel.value = Math.min(prev, total);
+  sel.value = Math.min(prev, total - 1);
 }
 
 document.getElementById('plus-ones').addEventListener('change', function() {
