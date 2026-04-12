@@ -30,12 +30,18 @@
     min-height: 100vh;
   }
 
+  /* Painel admin com fundo branco */
+  #page-admin, #page-admin-login {
+    background: #fff;
+    min-height: 100vh;
+  }
+
   /* NAV */
   nav {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: #faf0f3;
+    background: var(--page-bg, #faf0f3);
     border-bottom: 0.5px solid var(--border);
     display: flex;
     align-items: center;
@@ -141,6 +147,10 @@
     margin-top: 1.5rem;
     background: #fff;
   }
+
+  #page-rsvp { background: #faf0f3; min-height: 100vh; }
+  #page-admin { background: #fdfafa; min-height: 100vh; }
+  #page-admin-login { background: #fdfafa; min-height: 100vh; }
 
   .form-block h2 {
     font-family: 'Cormorant Garamond', serif;
@@ -527,9 +537,9 @@
     display: inline-block;
   }
 
-  .tag-green { background: rgba(89,19,62,0.08); color: #59133e; }
-  .tag-rose { background: rgba(194,99,122,0.1); color: var(--rose); }
-  .tag-muted { background: var(--champagne); color: var(--muted); }
+  .tag-green { background: #e6f4e7; color: #2a6e32; }
+  .tag-rose { background: #fdecea; color: #b71c1c; }
+  .tag-muted { background: #fff8e1; color: #8a6200; }
 
   /* CONFIRMATIONS TABLE */
   .conf-table {
@@ -826,9 +836,7 @@
       <h1>Área <em>Administrativa</em></h1>
     </div>
 
-    <div class="ornament" style="margin-bottom: 3rem">· ✦ ·</div>
-
-    <div class="form-block">
+    <div class="form-block" style="margin-top: 1rem;">
       <p class="form-intro">Acesso exclusivo para a equipe de organização.</p>
 
       <div id="login-alert" class="alert-msg"></div>
@@ -900,23 +908,6 @@
 
     <!-- TAB CONVIDADOS -->
     <div class="tab-panel" id="tab-guests">
-      <div id="guests-alert" class="admin-alert"></div>
-      <div class="add-guest-row">
-        <div class="field-group">
-          <label class="field-label">Nome completo</label>
-          <div class="field-rule"></div>
-          <input type="text" class="field-input" id="new-guest-name" placeholder="Nome do convidado…" onkeydown="if(event.key==='Enter') addGuest()" />
-        </div>
-        <div class="field-group" style="width: 180px; flex: none;">
-          <label class="field-label">Tipo</label>
-          <div class="field-rule"></div>
-          <select class="select-input" id="new-guest-type">
-            <option value="individual">Individual</option>
-            <option value="familia">Família (com +)</option>
-          </select>
-        </div>
-        <button class="btn-admin" style="flex-shrink:0; align-self:flex-end;" onclick="addGuest()">Adicionar</button>
-      </div>
       <div id="guest-list-wrap"></div>
     </div>
 
