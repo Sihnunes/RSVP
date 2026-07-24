@@ -863,7 +863,7 @@
       <div class="field-group">
         <label class="field-label">Senha</label>
         <div class="field-rule"></div>
-        <input type="password" class="field-input" id="admin-pass" placeholder="Digite a senha…" onkeydown="if(event.key==='Enter') doLogin()" />
+        <input type="password" class="field-input" id="admin-pass" placeholder="Digite a senha…" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') doLogin()" />
       </div>
 
       <div class="btn-group">
@@ -919,7 +919,7 @@
         <div class="field-group">
           <label class="field-label">Nova senha de acesso</label>
           <div class="field-rule"></div>
-          <input type="password" class="field-input" id="cfg-pass" placeholder="Deixe em branco para manter" />
+          <input type="password" class="field-input" id="cfg-pass" placeholder="Deixe em branco para manter" autocomplete="new-password" autocorrect="off" spellcheck="false" />
         </div>
       </div>
       <button class="btn-admin" onclick="saveConfig()">Salvar configurações</button>
