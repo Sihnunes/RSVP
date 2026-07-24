@@ -11,21 +11,21 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --blush: #fce8ef;
-    --rose: #C2637A;
-    --champagne: #faf0f3;
-    --cream: #fdf5f7;
-    --deep: #59133e;
-    --text: #59133e;
-    --muted: #8a4a5e;
-    --gold: #C2637A;
-    --border: rgba(232,160,180,0.35);
-    --rose-medio: #E8A0B4;
+    --blush: #fdf2f1;
+    --rose: #c7908d;
+    --champagne: #fdf2f1;
+    --cream: #fdf2f1;
+    --deep: #8c5c59;
+    --text: #2f2927;
+    --muted: rgba(47, 41, 39, 0.65);
+    --gold: #c7908d;
+    --border: rgba(199, 144, 141, 0.28);
+    --rose-medio: rgba(199, 144, 141, 0.55);
   }
 
   body {
     font-family: 'Jost', sans-serif;
-    background: #faf0f3;
+    background: #fdf2f1;
     color: var(--deep);
     min-height: 100vh;
   }
@@ -41,7 +41,7 @@
     position: sticky;
     top: 0;
     z-index: 50;
-    background: var(--page-bg, #faf0f3);
+    background: var(--page-bg, #fdf2f1);
     border-bottom: 0.5px solid var(--border);
     display: flex;
     align-items: center;
@@ -116,6 +116,7 @@
 
   .rsvp-header h1 {
     font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
     font-size: clamp(2.2rem, 5vw, 3.2rem);
     font-weight: 300;
     color: var(--deep);
@@ -130,6 +131,19 @@
     letter-spacing: 0.01em;
   }
 
+  .rsvp-header .header-intro {
+    margin-top: 16px;
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    color: var(--text);
+    opacity: 0.75;
+    line-height: 1.6;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .ornament {
     text-align: center;
     font-family: 'Cormorant Garamond', serif;
@@ -142,15 +156,16 @@
 
   /* FORM BLOCK */
   .form-block {
-    border: 0.5px solid var(--rose-medio);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     padding: 3rem;
     margin-top: 1.5rem;
     background: #fff;
   }
 
-  #page-rsvp { background: #faf0f3; min-height: 100vh; }
-  #page-admin { background: #fdfafa; min-height: 100vh; }
-  #page-admin-login { background: #fdfafa; min-height: 100vh; }
+  #page-rsvp { background: #fdf2f1; min-height: 100vh; }
+  #page-admin { background: #fffbfb; min-height: 100vh; }
+  #page-admin-login { background: #fffbfb; min-height: 100vh; }
 
   .form-block h2 {
     font-family: 'Cormorant Garamond', serif;
@@ -178,44 +193,43 @@
   }
 
   .field-label {
-    font-size: 0.68rem;
+    font-family: 'Jost', sans-serif;
+    font-size: 12px;
     font-weight: 400;
-    letter-spacing: 0.18em;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--text);
+    color: var(--deep);
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 8px;
   }
 
   .field-rule {
-    height: 0.5px;
-    background: var(--border);
-    margin-bottom: 0.6rem;
+    display: none;
   }
 
   .field-input {
     width: 100%;
-    border: none;
-    border-bottom: 1px solid var(--rose-medio);
-    background: transparent;
-    padding: 0.7rem 0;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.3rem;
-    font-style: italic;
-    font-weight: 400;
-    color: var(--deep);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--blush);
+    padding: 12px 14px;
+    font-family: 'Jost', sans-serif;
+    font-size: 15px;
+    font-style: normal;
+    font-weight: 300;
+    color: var(--text);
     outline: none;
     transition: border-color 0.25s;
   }
 
   .field-input::placeholder {
     color: var(--muted);
-    opacity: 0.7;
-    font-style: italic;
+    opacity: 1;
+    font-style: normal;
   }
 
   .field-input:focus {
-    border-bottom-color: var(--rose);
+    border-color: var(--rose);
   }
 
   .plus-section {
@@ -281,33 +295,36 @@
 
   .btn-rsvp {
     display: inline-block;
-    padding: 0.9rem 2.75rem;
-    border: 0.5px solid var(--rose);
-    color: var(--deep);
-    font-size: 0.65rem;
-    font-weight: 300;
-    letter-spacing: 0.22em;
+    padding: 16px 2.75rem;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 2px;
     text-transform: uppercase;
     text-decoration: none;
     font-family: 'Jost', sans-serif;
-    transition: all 0.3s;
+    transition: opacity 0.3s;
     cursor: pointer;
-    background: transparent;
+    background: var(--deep);
   }
 
   .btn-rsvp:hover {
-    background: var(--rose);
-    color: #fff;
+    opacity: 0.88;
   }
 
   .btn-rsvp.decline {
-    border-color: var(--rose);
-    color: var(--rose);
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: transparent;
+    opacity: 0.8;
   }
 
   .btn-rsvp.decline:hover {
-    background: var(--rose);
-    color: #fff;
+    border-color: var(--rose);
+    color: var(--deep);
+    opacity: 1;
   }
 
   .prazo {
@@ -358,15 +375,16 @@
 
   .alert-msg {
     display: none;
-    border: 0.5px solid var(--border);
-    border-left: 2px solid var(--rose);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     background: var(--champagne);
     padding: 1rem 1.25rem;
     margin-bottom: 1.5rem;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1rem;
-    font-style: italic;
-    color: var(--muted);
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    font-style: normal;
+    color: var(--deep);
     line-height: 1.65;
   }
 
@@ -445,7 +463,9 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0;
-    border: 0.5px solid var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
     margin-bottom: 3rem;
   }
 
@@ -465,7 +485,7 @@
     line-height: 1;
   }
 
-  .metric-num.green { color: #59133e; }
+  .metric-num.green { color: #8c5c59; }
   .metric-num.rose { color: var(--rose-medio); }
 
   .metric-lbl {
@@ -492,7 +512,8 @@
     gap: 1rem;
     align-items: flex-end;
     margin-bottom: 2rem;
-    border: 0.5px solid var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     padding: 1.5rem 2rem;
     background: var(--cream);
   }
@@ -534,6 +555,7 @@
     letter-spacing: 0.15em;
     text-transform: uppercase;
     padding: 3px 10px;
+    border-radius: 3px;
     display: inline-block;
   }
 
@@ -574,25 +596,27 @@
   .btn-admin {
     display: inline-block;
     padding: 0.75rem 2rem;
-    border: 0.5px solid var(--deep);
-    color: var(--deep);
-    font-size: 0.62rem;
-    font-weight: 300;
-    letter-spacing: 0.2em;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     font-family: 'Jost', sans-serif;
-    transition: all 0.3s;
+    transition: opacity 0.3s;
     cursor: pointer;
-    background: transparent;
+    background: var(--deep);
   }
 
-  .btn-admin:hover { background: var(--deep); color: #fff; }
+  .btn-admin:hover { opacity: 0.88; }
 
   .btn-sm {
     padding: 0.4rem 1rem;
     font-size: 0.55rem;
     letter-spacing: 0.15em;
-    border: 0.5px solid var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     color: var(--muted);
     font-family: 'Jost', sans-serif;
     text-transform: uppercase;
@@ -602,11 +626,12 @@
     transition: all 0.2s;
   }
 
-  .btn-sm:hover { border-color: var(--rose); color: var(--rose); }
+  .btn-sm:hover { border-color: var(--rose); color: var(--deep); }
 
   .btn-logout {
     padding: 0.5rem 1.25rem;
-    border: 0.5px solid var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     color: var(--muted);
     font-size: 0.6rem;
     letter-spacing: 0.15em;
@@ -623,14 +648,14 @@
   /* ADMIN ALERT */
   .admin-alert {
     display: none;
-    border: 0.5px solid var(--border);
-    border-left: 2px solid var(--rose);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     background: var(--champagne);
     padding: 0.85rem 1.25rem;
     margin-bottom: 1.5rem;
     font-size: 0.78rem;
     font-weight: 300;
-    color: var(--muted);
+    color: var(--deep);
     letter-spacing: 0.03em;
   }
 
@@ -638,21 +663,21 @@
 
   .select-input {
     width: 100%;
-    border: none;
-    border-bottom: 1px solid var(--rose-medio);
-    background: transparent;
-    padding: 0.7rem 0;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.3rem;
-    font-style: italic;
-    font-weight: 400;
-    color: var(--deep);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--blush);
+    padding: 12px 14px;
+    font-family: 'Jost', sans-serif;
+    font-size: 15px;
+    font-style: normal;
+    font-weight: 300;
+    color: var(--text);
     outline: none;
     cursor: pointer;
     appearance: none;
   }
 
-  .select-input:focus { border-bottom-color: var(--rose); }
+  .select-input:focus { border-color: var(--rose); }
 
   /* EXPORT ROW */
   .export-row {
@@ -741,20 +766,14 @@
 </head>
 <body>
 
-<nav>
-  <span class="nav-logo" onclick="showPage('rsvp')">Mariana Nunes</span>
-  <ul class="nav-links">
-    <li><a onclick="showPage('rsvp')" class="active" id="nav-rsvp">Confirmação</a></li>
-  </ul>
-</nav>
-
 <!-- ===================== FORMULÁRIO RSVP ===================== -->
 <div class="page active" id="page-rsvp">
   <div class="rsvp-page">
 
     <div class="rsvp-header">
-      <span class="section-label">Mariana Nunes · XV Anos</span>
-      <h1><em>Confirmação de Presença</em></h1>
+      <span class="section-label">10 de Dezembro de 2026</span>
+      <h1>Confirme sua Presença</h1>
+      <p class="header-intro">Será uma alegria ter você conosco neste momento tão especial. Por favor, confirme sua presença até o dia 20 de novembro.</p>
     </div>
 
     <div class="form-block" id="rsvp-form-block">
