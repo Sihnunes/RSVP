@@ -21,6 +21,8 @@
     --gold: #a9825f;
     --border: rgba(184, 145, 127, 0.28);
     --rose-medio: rgba(184, 145, 127, 0.5);
+    --pink: #d9789e;
+    --pink-hover: #c96389;
   }
 
   body {
@@ -382,11 +384,12 @@
     font-family: 'Jost', sans-serif;
     transition: opacity 0.3s;
     cursor: pointer;
-    background: var(--rose);
+    background: var(--pink);
   }
 
   .btn-rsvp:hover {
     opacity: 0.88;
+    background: var(--pink-hover);
   }
 
   .btn-rsvp.decline {
@@ -681,10 +684,10 @@
     font-family: 'Jost', sans-serif;
     transition: opacity 0.3s;
     cursor: pointer;
-    background: var(--rose);
+    background: var(--pink);
   }
 
-  .btn-admin:hover { opacity: 0.88; }
+  .btn-admin:hover { opacity: 0.88; background: var(--pink-hover); }
 
   .btn-sm {
     padding: 0.4rem 1rem;
