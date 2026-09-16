@@ -254,10 +254,14 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     background: var(--blush);
-    cursor: pointer;
     font-size: 14px;
     font-weight: 300;
     color: var(--text);
+  }
+
+  .companion-item label {
+    cursor: pointer;
+    flex: 1;
   }
 
   .companion-item input[type="checkbox"] {
@@ -290,6 +294,24 @@
     color: var(--muted);
     font-size: 0.85em;
   }
+
+  .companion-age {
+    width: 64px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #fff;
+    padding: 6px 8px;
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text);
+    outline: none;
+    margin-left: auto;
+  }
+
+  .companion-age:focus { border-color: var(--rose); }
+
+  .companion-age::placeholder { color: var(--muted); opacity: 0.8; }
 
   .radio-group {
     display: flex;
@@ -1115,10 +1137,11 @@ document.getElementById('guest-name').addEventListener('input', async function()
 function renderCompanions(companions) {
   const wrap = document.getElementById('companions-list');
   wrap.innerHTML = companions.map((c, i) => `
-    <label class="companion-item">
-      <input type="checkbox" class="companion-check" value="${i}" checked>
-      <span>${c.name}${c.child ? ' <span class="child-tag">(criança até 7 anos)</span>' : ''}</span>
-    </label>
+    <div class="companion-item">
+      <input type="checkbox" id="comp-check-${i}" class="companion-check" value="${i}" checked>
+      <label for="comp-check-${i}">${c.name}</label>
+      ${c.child ? `<input type="number" class="companion-age" data-idx="${i}" min="0" max="17" inputmode="numeric" placeholder="Idade">` : ''}
+    </div>
   `).join('');
 }
 
@@ -1144,15 +1167,27 @@ async function submitRSVP(resp) {
   document.getElementById('rsvp-alert').classList.remove('visible');
 
   // Pega só os acompanhantes que ficaram marcados (o convidado pode desmarcar quem não vier)
+  // Para crianças, pega também a idade digitada
   let confirmedCompanions = [];
   if (guest.companions.length) {
     const checks = document.querySelectorAll('.companion-check:checked');
-    confirmedCompanions = Array.from(checks).map(chk => guest.companions[parseInt(chk.value)]);
+    confirmedCompanions = Array.from(checks).map(chk => {
+      const idx = parseInt(chk.value);
+      const c = guest.companions[idx];
+      if (c.child) {
+        const ageInput = document.querySelector(`.companion-age[data-idx="${idx}"]`);
+        const age = ageInput ? ageInput.value.trim() : '';
+        return { ...c, age };
+      }
+      return c;
+    });
   }
   const plus = confirmedCompanions.length;
   const children = confirmedCompanions.filter(c => c.child).length;
   const adults = (plus + 1) - children;
-  const companions = confirmedCompanions.map(c => c.name).join(', ');
+  const companions = confirmedCompanions
+    .map(c => c.child ? `${c.name} (${c.age || '?'} anos)` : c.name)
+    .join(', ');
   const date = new Date().toLocaleString('pt-BR');
   const entry = { name: guest.name, phone, resp, plus, children, adults, companions, date };
 
