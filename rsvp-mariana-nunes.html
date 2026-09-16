@@ -239,6 +239,58 @@
 
   .plus-section.visible { display: block; }
 
+  .companions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+  }
+
+  .companion-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--blush);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text);
+  }
+
+  .companion-item input[type="checkbox"] {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    border: 1px solid var(--rose);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .companion-item input[type="checkbox"]:checked {
+    background: var(--rose);
+  }
+
+  .companion-item input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    font-size: 11px;
+    color: #fff;
+  }
+
+  .child-tag {
+    font-style: italic;
+    color: var(--muted);
+    font-size: 0.85em;
+  }
+
   .radio-group {
     display: flex;
     flex-direction: column;
@@ -796,30 +848,10 @@
 
       <div class="plus-section" id="plus-section">
         <div class="field-group">
-          <label class="field-label">Quantas pessoas virão com você?</label>
+          <label class="field-label">Quem vem com você?</label>
           <div class="field-rule"></div>
-          <select class="select-input" id="plus-ones">
-            <option value="0">Apenas eu</option>
-            <option value="1">Eu + 1 acompanhante</option>
-            <option value="2">Eu + 2 acompanhantes</option>
-            <option value="3">Eu + 3 acompanhantes</option>
-            <option value="4">Eu + 4 acompanhantes</option>
-          </select>
+          <div class="companions-list" id="companions-list"></div>
         </div>
-      </div>
-
-      <div class="plus-section" id="children-section">
-        <div class="field-group">
-          <label class="field-label">Quantas são crianças até 7 anos?</label>
-          <div class="field-rule"></div>
-          <select class="select-input" id="children-count">
-            <option value="0">Nenhuma criança</option>
-            <option value="1">1 criança</option>
-            <option value="2">2 crianças</option>
-            <option value="3">3 crianças</option>
-          </select>
-        </div>
-
       </div>
 
       <div class="btn-group">
@@ -985,12 +1017,13 @@ let confirmList = [];
 function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
 
 // Busca convidados via CSV público (sem problema de CORS)
+// Colunas da aba "Convidados": A) Nome  B) Convidado Principal (vazio se for titular)  C) Criança (SIM/NÃO)
 async function fetchGuests() {
   try {
     const r = await fetch(CSV_URL + '&t=' + Date.now());
     const text = await r.text();
     const lines = text.trim().split('\n').slice(1);
-    guestList = lines
+    const raw = lines
       .filter(l => l.trim())
       .map(l => {
         const cols = [];
@@ -1001,11 +1034,21 @@ async function fetchGuests() {
           else { cur += l[i]; }
         }
         cols.push(cur.trim());
-        const rawType = (cols[1]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-        const type = rawType.includes('fam') ? 'familia' : 'individual';
-        return { name: cols[0]||'', type, limit: parseInt(cols[2])||0 };
+        const childRaw = (cols[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+        return { name: cols[0]||'', parent: (cols[1]||'').trim(), child: childRaw.startsWith('sim') };
       })
       .filter(g => g.name);
+
+    // Monta titulares e agrupa acompanhantes por "Convidado Principal"
+    const map = {};
+    raw.forEach(g => { if (!g.parent) map[norm(g.name)] = { name: g.name, companions: [] }; });
+    raw.forEach(g => {
+      if (g.parent) {
+        const key = norm(g.parent);
+        if (map[key]) map[key].companions.push({ name: g.name, child: g.child });
+      }
+    });
+    guestList = Object.values(map);
   } catch(e) { guestList = []; }
 }
 
@@ -1049,67 +1092,35 @@ document.getElementById('guest-phone').addEventListener('input', function() {
   this.value = fmtPhone(this.value);
 });
 
-// Ao digitar o nome, busca convidado no Sheets e monta select de acompanhantes
+// Ao digitar o nome, busca convidado no Sheets e mostra os acompanhantes dele pra confirmação
 document.getElementById('guest-name').addEventListener('input', async function() {
   const name = this.value.trim();
-  if (!name) { document.getElementById('plus-section').classList.remove('visible'); return; }
+  const ps = document.getElementById('plus-section');
+  if (!name) { ps.classList.remove('visible'); return; }
 
   // Se lista não carregada ainda, busca
   if (!guestList.length) await fetchGuests();
 
   const guest = guestList.find(x => norm(x.name) === norm(name));
-  const ps = document.getElementById('plus-section');
 
-  const isFamGuest = guest && guest.type && guest.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
-  if (isFamGuest && guest.limit > 1) {
-    const sel = document.getElementById('plus-ones');
-    sel.innerHTML = '';
-    for (let i = 1; i <= guest.limit; i++) {
-      const opt = document.createElement('option');
-      opt.value = i - 1;
-      opt.textContent = i === 1 ? 'Apenas eu' : `Eu + ${i - 1} acompanhante${i - 1 > 1 ? 's' : ''}`;
-      sel.appendChild(opt);
-    }
+  if (guest && guest.companions.length) {
+    renderCompanions(guest.companions);
     ps.classList.add('visible');
-    document.getElementById('children-section').classList.add('visible');
-    updateChildrenSelect(guest.limit);
   } else {
     ps.classList.remove('visible');
-    document.getElementById('children-section').classList.remove('visible');
   }
 });
 
-// Atualiza opções de crianças conforme total de pessoas selecionado
-function updateChildrenSelect(maxLimit) {
-  const plusVal = parseInt(document.getElementById('plus-ones').value) || 0;
-  const total = plusVal + 1;
-  const childSection = document.getElementById('children-section');
-  const sel = document.getElementById('children-count');
-  const prev = parseInt(sel.value) || 0;
-
-  // Esconde campo de crianças se vier sozinho
-  if (total <= 1) {
-    childSection.classList.remove('visible');
-    sel.value = 0;
-    return;
-  }
-
-  childSection.classList.add('visible');
-  sel.innerHTML = '';
-  for (let i = 0; i <= total - 1; i++) {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = i === 0 ? 'Nenhuma criança' : `${i} criança${i > 1 ? 's' : ''}`;
-    sel.appendChild(opt);
-  }
-  sel.value = Math.min(prev, total - 1);
+// Monta a lista de acompanhantes já marcados (o convidado desmarca quem não vier)
+function renderCompanions(companions) {
+  const wrap = document.getElementById('companions-list');
+  wrap.innerHTML = companions.map((c, i) => `
+    <label class="companion-item">
+      <input type="checkbox" class="companion-check" value="${i}" checked>
+      <span>${c.name}${c.child ? ' <span class="child-tag">(criança até 7 anos)</span>' : ''}</span>
+    </label>
+  `).join('');
 }
-
-document.getElementById('plus-ones').addEventListener('change', function() {
-  const name = document.getElementById('guest-name').value.trim();
-  const guest = guestList.find(g => norm(g.name) === norm(name));
-  if (guest) updateChildrenSelect(guest.limit);
-});
 
 async function submitRSVP(resp) {
   const name = document.getElementById('guest-name').value.trim();
@@ -1132,13 +1143,18 @@ async function submitRSVP(resp) {
 
   document.getElementById('rsvp-alert').classList.remove('visible');
 
-  const plusEl = document.getElementById('plus-ones');
-  const isFamSub = guest.type && guest.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
-  const plus = (isFamSub && guest.limit > 1) ? parseInt(plusEl.value) || 0 : 0;
-  const children = (isFamSub && guest.limit > 1) ? parseInt(document.getElementById('children-count').value) || 0 : 0;
+  // Pega só os acompanhantes que ficaram marcados (o convidado pode desmarcar quem não vier)
+  let confirmedCompanions = [];
+  if (guest.companions.length) {
+    const checks = document.querySelectorAll('.companion-check:checked');
+    confirmedCompanions = Array.from(checks).map(chk => guest.companions[parseInt(chk.value)]);
+  }
+  const plus = confirmedCompanions.length;
+  const children = confirmedCompanions.filter(c => c.child).length;
   const adults = (plus + 1) - children;
+  const companions = confirmedCompanions.map(c => c.name).join(', ');
   const date = new Date().toLocaleString('pt-BR');
-  const entry = { name: guest.name, phone, resp, plus, children, adults, date };
+  const entry = { name: guest.name, phone, resp, plus, children, adults, companions, date };
 
   data.confirmations.push(entry);
   saveData();
@@ -1233,17 +1249,17 @@ async function renderAdminGuests() {
   }
 
   el.innerHTML = `<table class="guest-table">
-    <thead><tr><th>Nome</th><th>Tipo</th><th>Limite</th><th>Status</th></tr></thead>
+    <thead><tr><th>Nome</th><th>Acompanhantes</th><th>Status</th></tr></thead>
     <tbody>${guestList.map(g => {
       const conf = confirmList.find(c => norm(c.name) === norm(g.name));
       const tag = conf ? (conf.resp === 'Confirmado' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>') : '<span class="tag tag-muted">Aguardando</span>';
-      const isFam = g.type && g.type.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('fam');
-      const tipo = isFam ? 'Família' : 'Individual';
-      const limite = isFam ? g.limit + ' pess.' : '—';
-      return `<tr><td>${g.name}</td><td style="color:var(--muted)">${tipo}</td><td style="color:var(--muted);text-align:center">${limite}</td><td>${tag}</td></tr>`;
+      const acompanhantes = g.companions.length
+        ? g.companions.map(c => c.name + (c.child ? ' (criança)' : '')).join(', ')
+        : '—';
+      return `<tr><td>${g.name}</td><td style="color:var(--muted)">${acompanhantes}</td><td>${tag}</td></tr>`;
     }).join('')}</tbody>
   </table>
-  <p style="font-size:0.72rem;color:var(--muted);font-weight:200;margin-top:1rem;letter-spacing:0.05em;">Para adicionar ou remover convidados, edite diretamente a aba "Convidados" na planilha do Google Sheets.</p>`;
+  <p style="font-size:0.72rem;color:var(--muted);font-weight:200;margin-top:1rem;letter-spacing:0.05em;">Para adicionar ou remover convidados e acompanhantes, edite diretamente a aba "Convidados" na planilha do Google Sheets.</p>`;
 }
 
 // CONFIRMAÇÕES — lê do Google Sheets
@@ -1283,7 +1299,7 @@ async function fetchAndRenderConfirmations() {
   }
 
   el.innerHTML = `<table class="conf-table">
-    <thead><tr><th>Nome</th><th>Telefone</th><th>Resposta</th><th>Total</th><th>Adultos</th><th>Crianças</th><th>Data</th></tr></thead>
+    <thead><tr><th>Nome</th><th>Telefone</th><th>Resposta</th><th>Total</th><th>Adultos</th><th>Crianças</th><th>Acompanhantes</th><th>Data</th></tr></thead>
     <tbody>${confirmList.map(c => {
       const total = c.resp === 'Confirmado' ? 1 + (parseInt(c.plus)||0) : 0;
       const children = parseInt(c.children)||0;
@@ -1295,6 +1311,7 @@ async function fetchAndRenderConfirmations() {
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? total : '—'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? adults : '—'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? children : '—'}</td>
+        <td style="color:var(--muted);font-size:0.78rem">${c.resp === 'Confirmado' ? (c.companions || '—') : '—'}</td>
         <td style="color:var(--muted);font-size:0.72rem">${c.date ? (String(c.date).includes('T') ? new Date(c.date).toLocaleString('pt-BR') : c.date) : '—'}</td>
       </tr>`;
     }).join('')}
@@ -1304,8 +1321,8 @@ async function fetchAndRenderConfirmations() {
 
 function exportCSV() {
   if (!confirmList.length) return;
-  const rows = [['Nome','Telefone','Resposta','Acompanhantes','Data']];
-  confirmList.forEach(c => rows.push([c.name, c.phone||'', c.resp, c.plus||0, c.date]));
+  const rows = [['Nome','Telefone','Resposta','Total acompanhantes','Nomes dos acompanhantes','Data']];
+  confirmList.forEach(c => rows.push([c.name, c.phone||'', c.resp, c.plus||0, c.companions||'', c.date]));
   const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
