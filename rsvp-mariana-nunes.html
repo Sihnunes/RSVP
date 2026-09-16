@@ -296,7 +296,7 @@
   }
 
   .companion-age {
-    width: 64px;
+    width: 76px;
     border: 1px solid var(--border);
     border-radius: 4px;
     background: #fff;
@@ -307,6 +307,7 @@
     color: var(--text);
     outline: none;
     margin-left: auto;
+    cursor: pointer;
   }
 
   .companion-age:focus { border-color: var(--rose); }
@@ -381,7 +382,7 @@
     font-family: 'Jost', sans-serif;
     transition: opacity 0.3s;
     cursor: pointer;
-    background: var(--deep);
+    background: var(--rose);
   }
 
   .btn-rsvp:hover {
@@ -680,7 +681,7 @@
     font-family: 'Jost', sans-serif;
     transition: opacity 0.3s;
     cursor: pointer;
-    background: var(--deep);
+    background: var(--rose);
   }
 
   .btn-admin:hover { opacity: 0.88; }
@@ -1136,13 +1137,16 @@ document.getElementById('guest-name').addEventListener('input', async function()
 // Monta a lista de acompanhantes já marcados (o convidado desmarca quem não vier)
 function renderCompanions(companions) {
   const wrap = document.getElementById('companions-list');
-  wrap.innerHTML = companions.map((c, i) => `
+  wrap.innerHTML = companions.map((c, i) => {
+    const ageOptions = Array.from({length: 11}, (_, n) => `<option value="${n}">${n}</option>`).join('');
+    return `
     <div class="companion-item">
       <input type="checkbox" id="comp-check-${i}" class="companion-check" value="${i}" checked>
       <label for="comp-check-${i}">${c.name}</label>
-      ${c.child ? `<input type="number" class="companion-age" data-idx="${i}" min="0" max="17" inputmode="numeric" placeholder="Idade">` : ''}
+      ${c.child ? `<select class="companion-age" data-idx="${i}"><option value="">Idade</option>${ageOptions}</select>` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function submitRSVP(resp) {
