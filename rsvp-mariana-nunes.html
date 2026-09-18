@@ -11,23 +11,23 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --blush: #f7f1ec;
-    --rose: #b8917f;
-    --champagne: #f7f1ec;
-    --cream: #f7f1ec;
-    --deep: #6f5148;
-    --text: #2f2927;
-    --muted: rgba(47, 41, 39, 0.65);
-    --gold: #a9825f;
-    --border: rgba(184, 145, 127, 0.28);
-    --rose-medio: rgba(184, 145, 127, 0.5);
-    --pink: #d9789e;
-    --pink-hover: #c96389;
+    --blush: #F1F0EC;
+    --rose: #DBA9B7;
+    --champagne: #F1F0EC;
+    --cream: #F1F0EC;
+    --deep: #514846;
+    --text: #514846;
+    --muted: #756B68;
+    --gold: #DBA9B7;
+    --border: rgba(219, 169, 183, 0.28);
+    --rose-medio: rgba(219, 169, 183, 0.55);
+    --pink: #DBA9B7;
+    --pink-hover: #ba909c;
   }
 
   body {
     font-family: 'Jost', sans-serif;
-    background: #f7f1ec;
+    background: #F1F0EC;
     color: var(--deep);
     min-height: 100vh;
   }
@@ -43,7 +43,7 @@
     position: sticky;
     top: 0;
     z-index: 50;
-    background: var(--page-bg, #f7f1ec);
+    background: var(--page-bg, #F1F0EC);
     border-bottom: 0.5px solid var(--border);
     display: flex;
     align-items: center;
@@ -165,9 +165,9 @@
     background: #fff;
   }
 
-  #page-rsvp { background: #f7f1ec; min-height: 100vh; }
-  #page-admin { background: #fffbfb; min-height: 100vh; }
-  #page-admin-login { background: #fffbfb; min-height: 100vh; }
+  #page-rsvp { background: #F1F0EC; min-height: 100vh; }
+  #page-admin { background: #F1F0EC; min-height: 100vh; }
+  #page-admin-login { background: #F1F0EC; min-height: 100vh; }
 
   .form-block h2 {
     font-family: 'Cormorant Garamond', serif;
@@ -449,7 +449,10 @@
     font-weight: 300;
     color: var(--muted);
     line-height: 1.85;
+    margin: 0 0 0.6rem;
   }
+
+  .feedback p:last-child { margin-bottom: 0; }
 
   .alert-msg {
     display: none;
@@ -563,7 +566,7 @@
     line-height: 1;
   }
 
-  .metric-num.green { color: #8c5c59; }
+  .metric-num.green { color: #514846; }
   .metric-num.rose { color: var(--rose-medio); }
 
   .metric-lbl {
@@ -646,6 +649,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.82rem;
+    white-space: nowrap;
   }
 
   .conf-table th {
@@ -657,6 +661,7 @@
     padding: 0.6rem 0.75rem;
     text-align: left;
     border-bottom: 0.5px solid var(--border);
+    white-space: nowrap;
   }
 
   .conf-table td {
@@ -665,10 +670,13 @@
     color: var(--text);
     font-weight: 300;
     vertical-align: middle;
+    white-space: nowrap;
   }
 
   .conf-table tr:last-child td { border-bottom: none; }
   .conf-table tr:hover td { background: var(--cream); }
+
+  #conf-table-wrap { overflow-x: auto; }
 
   /* BUTTONS */
   .btn-admin {
@@ -809,7 +817,7 @@
     font-weight: 200;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: #4a4a4a;
+    color: var(--muted);
     opacity: 0.7;
     cursor: pointer;
     text-decoration: none;
@@ -866,12 +874,6 @@
         <input type="text" class="field-input" id="guest-name" placeholder="Digite seu nome completo…" autocomplete="off" />
       </div>
 
-      <div class="field-group">
-        <label class="field-label">Telefone / WhatsApp</label>
-        <div class="field-rule"></div>
-        <input type="tel" class="field-input" id="guest-phone" placeholder="(00) 00000-0000" autocomplete="off" />
-      </div>
-
       <div class="plus-section" id="plus-section">
         <div class="field-group">
           <label class="field-label">Quem vem com você?</label>
@@ -888,14 +890,22 @@
 
     <div class="feedback" id="feedback-sim">
       <div class="feedback-icon">· ✦ ·</div>
-      <h3>Até <em>logo!</em></h3>
-      <p>Sua presença foi confirmada com sucesso.<br>Mal podemos esperar para celebrar juntos.</p>
+      <h3>Perfeito!</h3>
+      <p>Sua presença foi confirmada com sucesso.</p>
+      <p>Mal podemos esperar para celebrar juntos.</p>
     </div>
 
     <div class="feedback" id="feedback-nao">
       <div class="feedback-icon">· ✦ ·</div>
       <h3>Entendido, <em>obrigada.</em></h3>
       <p>Sua ausência foi registrada.<br>Você fará falta nessa noite especial.</p>
+    </div>
+
+    <div class="feedback" id="feedback-ja">
+      <div class="feedback-icon">· ✦ ·</div>
+      <h3>Presença <em>Confirmada!</em></h3>
+      <p>Sua confirmação já foi registrada.</p>
+      <p>Estamos ansiosos para celebrar esse momento com você.</p>
     </div>
 
     <a class="admin-link" onclick="showPage('admin-login')">Área administrativa</a>
@@ -998,12 +1008,12 @@
           <span class="metric-lbl">Total pessoas</span>
         </div>
         <div class="metric-card">
-          <div class="metric-num green" id="m-adults">—</div>
-          <span class="metric-lbl">Adultos</span>
-        </div>
-        <div class="metric-card">
           <div class="metric-num rose" id="m-children">—</div>
           <span class="metric-lbl">Crianças</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num green" id="m-adults">—</div>
+          <span class="metric-lbl">Adultos</span>
         </div>
       </div>
 
@@ -1107,35 +1117,56 @@ function showTab(id) {
   if (id === 'tab-guests') renderAdminGuests();
 }
 
-// FORMAT PHONE
+// FORMAT PHONE (mantida sem uso ativo, caso o campo volte a existir futuramente)
 function fmtPhone(v) {
   v = v.replace(/\D/g,'');
   if (v.length <= 10) return v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
-  return v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+  return v.replace(/(\d{2})(\d{1})(\d{4})(\d{0,4})/,'($1) $2 $3-$4');
 }
 
-document.getElementById('guest-phone').addEventListener('input', function() {
-  this.value = fmtPhone(this.value);
-});
-
 // Ao digitar o nome, busca convidado no Sheets e mostra os acompanhantes dele pra confirmação
+let confirmedNamesCache = null;
+let guestsPromise = null;
+function ensureGuests(){ if(!guestsPromise) guestsPromise = fetchGuests(); return guestsPromise; }
+let confirmationsPromise = null;
+function ensureConfirmations(){ if(!confirmationsPromise) confirmationsPromise = fetchConfirmationsFromSheet(); return confirmationsPromise; }
+// Pre-carrega assim que a pagina abre, pra checagem do nome ficar pronta
+// (ou quase) quando a pessoa terminar de digitar.
+ensureGuests();
+ensureConfirmations();
+
 document.getElementById('guest-name').addEventListener('input', async function() {
   const name = this.value.trim();
   const ps = document.getElementById('plus-section');
   if (!name) { ps.classList.remove('visible'); return; }
 
-  // Se lista não carregada ainda, busca
-  if (!guestList.length) await fetchGuests();
-
+  await ensureGuests();
   const guest = guestList.find(x => norm(x.name) === norm(name));
+  if (!guest) { ps.classList.remove('visible'); return; }
 
-  if (guest && guest.companions.length) {
+  // Checa duplicidade ANTES de mostrar os acompanhantes, pra lista nao
+  // chegar a aparecer pra quem ja confirmou.
+  confirmedNamesCache = await ensureConfirmations();
+  if (document.getElementById('guest-name').value.trim() !== name) return;
+  const already = confirmedNamesCache.find(c => norm(c.name) === norm(name));
+  if (already) {
+    ps.classList.remove('visible');
+    showAlreadyConfirmed();
+    return;
+  }
+
+  if (guest.companions.length) {
     renderCompanions(guest.companions);
     ps.classList.add('visible');
   } else {
     ps.classList.remove('visible');
   }
 });
+
+function showAlreadyConfirmed() {
+  document.getElementById('rsvp-form-block').style.display = 'none';
+  document.getElementById('feedback-ja').classList.add('visible');
+}
 
 // Monta a lista de acompanhantes já marcados (o convidado desmarca quem não vier)
 function renderCompanions(companions) {
@@ -1154,22 +1185,21 @@ function renderCompanions(companions) {
 
 async function submitRSVP(resp) {
   const name = document.getElementById('guest-name').value.trim();
-  const phone = document.getElementById('guest-phone').value.trim();
+  const phone = '';
 
   if (!name) { showRSVPAlert('Por favor, informe seu nome completo.'); return; }
-  if (!phone || phone.replace(/\D/g,'').length < 10) { showRSVPAlert('Por favor, informe um telefone válido.'); return; }
 
-  // Busca lista e confirmações atualizadas
-  showRSVPAlert('Verificando sua presença na lista…');
-  await fetchGuests();
+  // Reaproveita os dados ja pre-carregados desde a abertura da pagina, em
+  // vez de buscar tudo de novo — so mostra o aviso se ainda nao tiver pronto.
+  if (!guestList.length || !confirmedNamesCache) showRSVPAlert('Verificando sua presença na lista…');
+  const [, sheetsConfs] = await Promise.all([ensureGuests(), ensureConfirmations()]);
 
   const guest = guestList.find(g => norm(g.name) === norm(name));
   if (!guest) { showRSVPAlert('Seu nome não foi encontrado na lista de convidados. Verifique com a organização.'); return; }
 
   // Verifica duplicata no Sheets
-  const sheetsConfs = await fetchConfirmationsFromSheet();
   const alreadyConfirmed = sheetsConfs.find(c => norm(c.name) === norm(name));
-  if (alreadyConfirmed) { showRSVPAlert('Você já enviou sua confirmação anteriormente. Obrigada!'); return; }
+  if (alreadyConfirmed) { showAlreadyConfirmed(); return; }
 
   document.getElementById('rsvp-alert').classList.remove('visible');
 
@@ -1190,7 +1220,10 @@ async function submitRSVP(resp) {
     });
   }
   const plus = confirmedCompanions.length;
-  const children = confirmedCompanions.filter(c => c.child).length;
+  // So conta como crianca (pra fins de totais) quem tem ate 7 anos; se a
+  // pessoa marcou idade maior, entra como adulto mesmo estando na lista
+  // como "crianca" no cadastro de convidados.
+  const children = confirmedCompanions.filter(c => c.child && (c.age === "" || parseInt(c.age) <= 7)).length;
   const adults = (plus + 1) - children;
   const companions = confirmedCompanions
     .map(c => c.child ? `${c.name} (${c.age || '?'} anos)` : c.name)
@@ -1325,8 +1358,8 @@ async function fetchAndRenderConfirmations() {
   if (!confirmList.length) confirmList = localMapped;
 
   const sim = confirmList.filter(c => c.resp === 'Confirmado');
-  const totalPess = sim.reduce((a,c) => a + 1 + (parseInt(c.plus)||0), 0);
-  const totalAdults = sim.reduce((a,c) => a + (parseInt(c.adults) || (1 + (parseInt(c.plus)||0))), 0);
+  const totalPess = sim.reduce((a,c) => a + (parseInt(c.total)||0), 0);
+  const totalAdults = sim.reduce((a,c) => a + (parseInt(c.adults)||0), 0);
   const totalChildren = sim.reduce((a,c) => a + (parseInt(c.children)||0), 0);
   const nao = confirmList.filter(c => c.resp === 'Não virá');
 
@@ -1341,20 +1374,19 @@ async function fetchAndRenderConfirmations() {
   }
 
   el.innerHTML = `<table class="conf-table">
-    <thead><tr><th>Nome</th><th>Telefone</th><th>Resposta</th><th>Total</th><th>Adultos</th><th>Crianças</th><th>Acompanhantes</th><th>Data</th></tr></thead>
+    <thead><tr><th>Nome</th><th>Resposta</th><th>Total</th><th>Adultos</th><th>Crianças</th><th>Acompanhantes</th><th>Data</th></tr></thead>
     <tbody>${confirmList.map(c => {
-      const total = c.resp === 'Confirmado' ? 1 + (parseInt(c.plus)||0) : 0;
+      const total = c.resp === 'Confirmado' ? (parseInt(c.total)||0) : 0;
       const children = parseInt(c.children)||0;
       const adults = parseInt(c.adults) || (total - children);
       return `<tr>
         <td>${c.name}</td>
-        <td style="color:var(--muted)">${c.phone || '—'}</td>
         <td>${c.resp === 'Confirmado' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? total : '—'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? adults : '—'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? children : '—'}</td>
         <td style="color:var(--muted);font-size:0.78rem">${c.resp === 'Confirmado' ? (c.companions || '—') : '—'}</td>
-        <td style="color:var(--muted);font-size:0.72rem">${c.date ? (String(c.date).includes('T') ? new Date(c.date).toLocaleString('pt-BR') : c.date) : '—'}</td>
+        <td style="color:var(--muted);font-size:0.72rem">${c.date || '—'}</td>
       </tr>`;
     }).join('')}
     </tbody>
@@ -1363,8 +1395,8 @@ async function fetchAndRenderConfirmations() {
 
 function exportCSV() {
   if (!confirmList.length) return;
-  const rows = [['Nome','Telefone','Resposta','Total acompanhantes','Nomes dos acompanhantes','Data']];
-  confirmList.forEach(c => rows.push([c.name, c.phone||'', c.resp, c.plus||0, c.companions||'', c.date]));
+  const rows = [['Nome','Resposta','Total acompanhantes','Nomes dos acompanhantes','Data']];
+  confirmList.forEach(c => rows.push([c.name, c.resp, Math.max((parseInt(c.total)||0) - 1, 0), c.companions||'', c.date]));
   const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
