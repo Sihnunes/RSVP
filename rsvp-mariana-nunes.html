@@ -1056,7 +1056,7 @@ function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u03
 // Colunas da aba "Convidados": A) Nome  B) Convidado Principal (vazio se for titular)  C) Criança (SIM/NÃO)
 async function fetchGuests() {
   try {
-    const r = await fetch(CSV_URL + '&t=' + Date.now());
+    const r = await fetchTimeout(CSV_URL + '&t=' + Date.now());
     const text = await r.text();
     const lines = text.trim().split('\n').slice(1);
     const raw = lines
@@ -1088,14 +1088,63 @@ async function fetchGuests() {
   } catch(e) { guestList = []; }
 }
 
+// fetch com limite de tempo — evita o painel ficar preso em "Carregando…"
+async function fetchTimeout(url, ms = 15000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try { return await fetch(url, { signal: ctrl.signal }); }
+  finally { clearTimeout(t); }
+}
+
 // Busca confirmações do Sheets para verificar duplicatas
 async function fetchConfirmationsFromSheet() {
   try {
-    const r = await fetch(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
+    const r = await fetchTimeout(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
     const text = await r.text();
     const d = JSON.parse(text);
     return d.confirmacoes || [];
   } catch(e) { return []; }
+}
+
+// PAINEL ADMIN — carrega convidados + confirmações numa única chamada (rota "bootstrap" do Apps Script).
+// Se o Apps Script falhar, os convidados ainda vêm do CSV público.
+let adminLoadError = '';
+async function loadAdminData() {
+  adminLoadError = '';
+  try {
+    const r = await fetchTimeout(SHEET_URL + '?action=bootstrap&t=' + Date.now());
+    const text = await r.text();
+    let d;
+    try { d = JSON.parse(text); }
+    catch(_) { throw new Error('O Apps Script não retornou dados (verifique a implantação e o acesso "Qualquer pessoa").'); }
+    if (!d.ok) throw new Error('Erro no Apps Script: ' + (d.error || 'desconhecido'));
+    confirmList = d.confirmacoes || [];
+    if (Array.isArray(d.convidados) && d.convidados.length) {
+      const map = {};
+      d.convidados.forEach(g => { if (!g.parent) map[norm(g.name)] = { name: g.name, companions: [] }; });
+      d.convidados.forEach(g => {
+        if (g.parent) {
+          const k = norm(g.parent);
+          if (map[k]) map[k].companions.push({ name: g.name, child: !!g.child });
+        }
+      });
+      guestList = Object.values(map);
+    } else {
+      await fetchGuests();
+    }
+  } catch(e) {
+    confirmList = [];
+    adminLoadError = e.name === 'AbortError'
+      ? 'A planilha demorou demais para responder. Tente recarregar.'
+      : (e.message || 'Não foi possível conectar à planilha.');
+    if (!guestList.length) await fetchGuests();
+  }
+}
+
+function adminErrorHTML() {
+  return adminLoadError
+    ? `<div class="admin-alert visible">⚠ ${adminLoadError}</div>`
+    : '';
 }
 
 function showPage(id) {
@@ -1310,20 +1359,14 @@ function saveConfig() {
 async function renderAdminGuests() {
   const el = document.getElementById('guest-list-wrap');
   el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Carregando…</p>';
-  await fetchGuests();
-  // Carrega confirmações para cruzar status
-  try {
-    const r = await fetch(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
-    const d = await r.json();
-    confirmList = d.confirmacoes || [];
-  } catch(e) {}
+  await loadAdminData();
 
   if (!guestList.length) {
-    el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhum convidado na planilha ainda.</p>';
+    el.innerHTML = adminErrorHTML() + '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhum convidado encontrado na planilha.</p>';
     return;
   }
 
-  el.innerHTML = `<table class="guest-table">
+  el.innerHTML = adminErrorHTML() + `<table class="guest-table">
     <thead><tr><th>Nome</th><th>Acompanhantes</th><th>Status</th></tr></thead>
     <tbody>${guestList.map(g => {
       const conf = confirmList.find(c => norm(c.name) === norm(g.name));
@@ -1342,16 +1385,7 @@ async function fetchAndRenderConfirmations() {
   const el = document.getElementById('conf-table-wrap');
   el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Carregando confirmações…</p>';
 
-  try {
-    const r = await fetch(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
-    const text = await r.text();
-    const d = JSON.parse(text);
-    confirmList = d.confirmacoes || [];
-  } catch(e) {
-    confirmList = data.confirmations.map(c => ({ ...c, resp: c.resp === 'sim' ? 'Confirmado' : 'Não virá' }));
-  }
-
-  if (!guestList.length) await fetchGuests();
+  await loadAdminData();
 
   // Merge: Sheets + local (evita perda se Sheets falhar)
   const localMapped = data.confirmations.map(c => ({ ...c, resp: c.resp === 'sim' ? 'Confirmado' : 'Não virá' }));
@@ -1369,11 +1403,11 @@ async function fetchAndRenderConfirmations() {
   document.getElementById('m-children').textContent = totalChildren;
 
   if (!confirmList.length) {
-    el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhuma confirmação recebida ainda.</p>';
+    el.innerHTML = adminErrorHTML() + '<p style="font-size:0.82rem;color:var(--muted);font-weight:300;padding:1rem 0;">Nenhuma confirmação recebida ainda.</p>';
     return;
   }
 
-  el.innerHTML = `<table class="conf-table">
+  el.innerHTML = adminErrorHTML() + `<table class="conf-table">
     <thead><tr><th>Nome</th><th>Resposta</th><th>Total</th><th>Adultos</th><th>Crianças</th><th>Acompanhantes</th><th>Data</th></tr></thead>
     <tbody>${confirmList.map(c => {
       const total = c.resp === 'Confirmado' ? (parseInt(c.total)||0) : 0;
