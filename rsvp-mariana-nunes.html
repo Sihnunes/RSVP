@@ -1052,9 +1052,35 @@ let confirmList = [];
 
 function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
 
-// Busca convidados via CSV público (sem problema de CORS)
+// Monta titulares e agrupa acompanhantes por "Convidado Principal"
+function buildGuestList(raw) {
+  const map = {};
+  raw.forEach(g => { if (!g.parent) map[norm(String(g.name))] = { name: String(g.name).trim(), companions: [] }; });
+  raw.forEach(g => {
+    if (g.parent) {
+      const key = norm(String(g.parent));
+      if (map[key]) map[key].companions.push({ name: String(g.name).trim(), child: !!g.child });
+    }
+  });
+  return Object.values(map);
+}
+
+// Busca convidados direto da planilha via Apps Script (dados em tempo real).
+// Se falhar, usa o CSV público — que o Google atualiza com atraso de alguns minutos.
 // Colunas da aba "Convidados": A) Nome  B) Convidado Principal (vazio se for titular)  C) Criança (SIM/NÃO)
 async function fetchGuests() {
+  try {
+    const r = await fetchTimeout(SHEET_URL + '?t=' + Date.now());
+    const d = JSON.parse(await r.text());
+    if (d.ok && Array.isArray(d.convidados) && d.convidados.length) {
+      guestList = buildGuestList(d.convidados);
+      return;
+    }
+  } catch(_) {}
+  await fetchGuestsCSV();
+}
+
+async function fetchGuestsCSV() {
   try {
     const r = await fetchTimeout(CSV_URL + '&t=' + Date.now());
     const text = await r.text();
@@ -1074,17 +1100,7 @@ async function fetchGuests() {
         return { name: cols[0]||'', parent: (cols[1]||'').trim(), child: childRaw.startsWith('sim') };
       })
       .filter(g => g.name);
-
-    // Monta titulares e agrupa acompanhantes por "Convidado Principal"
-    const map = {};
-    raw.forEach(g => { if (!g.parent) map[norm(g.name)] = { name: g.name, companions: [] }; });
-    raw.forEach(g => {
-      if (g.parent) {
-        const key = norm(g.parent);
-        if (map[key]) map[key].companions.push({ name: g.name, child: g.child });
-      }
-    });
-    guestList = Object.values(map);
+    guestList = buildGuestList(raw);
   } catch(e) { guestList = []; }
 }
 
@@ -1243,7 +1259,13 @@ async function submitRSVP(resp) {
   if (!guestList.length || !confirmedNamesCache) showRSVPAlert('Verificando sua presença na lista…');
   const [, sheetsConfs] = await Promise.all([ensureGuests(), ensureConfirmations()]);
 
-  const guest = guestList.find(g => norm(g.name) === norm(name));
+  let guest = guestList.find(g => norm(g.name) === norm(name));
+  if (!guest) {
+    // Nome pode ter sido incluído na planilha depois que a página abriu: busca de novo uma vez
+    showRSVPAlert('Verificando sua presença na lista…');
+    await fetchGuests();
+    guest = guestList.find(g => norm(g.name) === norm(name));
+  }
   if (!guest) { showRSVPAlert('Seu nome não foi encontrado na lista de convidados. Verifique com a organização.'); return; }
 
   // Verifica duplicata no Sheets
