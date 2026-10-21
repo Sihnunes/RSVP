@@ -905,12 +905,10 @@
 
     <div class="feedback" id="feedback-ja">
       <div class="feedback-icon">· ✦ ·</div>
-      <h3>Você já <em>respondeu!</em></h3>
-      <p>Encontramos sua resposta registrada na nossa lista.</p>
-      <p>Se precisar alterar alguma informação, fale com a organização.</p>
+      <h3>Já recebemos sua <em>confirmação!</em> 💗</h3>
+      <p>Se precisar alterar alguma informação, não se preocupe, você pode entrar em contato com a aniversariante.</p>
     </div>
 
-    <a class="admin-link" onclick="showPage('admin-login')">Área administrativa</a>
 
   </div>
 </div>
@@ -1340,7 +1338,6 @@ async function submitRSVP(resp) {
 
   hideRSVPHeader();
   document.getElementById('rsvp-form-block').style.display = 'none';
-  document.querySelector('.admin-link').style.display = 'none';
   document.getElementById(resp === 'sim' ? 'feedback-sim' : 'feedback-nao').classList.add('visible');
 }
 
