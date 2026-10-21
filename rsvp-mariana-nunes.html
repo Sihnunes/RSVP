@@ -906,7 +906,11 @@
     <div class="feedback" id="feedback-ja">
       <div class="feedback-icon">· ✦ ·</div>
       <h3>Já recebemos sua <em>confirmação!</em> 💗</h3>
-      <p>Se precisar alterar alguma informação, não se preocupe, você pode entrar em contato com a aniversariante.</p>
+      <p id="feedback-ja-text">Você deseja alterar sua resposta?</p>
+      <div class="btn-group">
+        <button class="btn-rsvp" onclick="permitirAlteracao()">Sim, alterar</button>
+        <button class="btn-rsvp decline" onclick="manterResposta()">Manter resposta</button>
+      </div>
     </div>
 
 
@@ -982,11 +986,7 @@
           <div class="field-rule"></div>
           <input type="text" class="field-input" id="cfg-prazo" placeholder="Ex: 20 de novembro de 2026" />
         </div>
-        <div class="field-group">
-          <label class="field-label">Nova senha de acesso</label>
-          <div class="field-rule"></div>
-          <input type="password" class="field-input" id="cfg-pass" placeholder="Deixe em branco para manter" autocomplete="new-password" autocorrect="off" spellcheck="false" />
-        </div>
+
       </div>
       <button class="btn-admin" onclick="saveConfig()">Salvar configurações</button>
     </div>
@@ -1040,7 +1040,7 @@ const SK = 'rsvp_mariana_v3';
 function loadData() {
   try { const r = localStorage.getItem(SK); if (r) return JSON.parse(r); } catch(e) {}
   return {
-    config: { name: 'Mariana Nunes', date: '10 de Dezembro de 2026', local: 'Casa Tarumã, São Paulo', prazo: '20 de novembro de 2026', pass: '}Y1S~3sP5h"U' },
+    config: { name: 'Mariana Nunes', date: '10 de Dezembro de 2026', local: 'Casa Tarumã, São Paulo', prazo: '20 de novembro de 2026', pass: '' },
     confirmations: []
   };
 }
@@ -1077,7 +1077,7 @@ async function fetchGuests() {
       return;
     }
   } catch(_) {}
-  await fetchGuestsCSV();
+  guestList = []; // Sem fallback público: dados devem vir do Apps Script
 }
 
 async function fetchGuestsCSV() {
@@ -1113,13 +1113,18 @@ async function fetchTimeout(url, ms = 15000) {
 }
 
 // Busca confirmações do Sheets para verificar duplicatas
-async function fetchConfirmationsFromSheet() {
-  try {
-    const r = await fetchTimeout(SHEET_URL + '?action=confirmacoes&t=' + Date.now());
-    const text = await r.text();
-    const d = JSON.parse(text);
-    return d.confirmacoes || [];
-  } catch(e) { return []; }
+async function consultarResposta(name) {
+  const r = await fetchTimeout(SHEET_URL + '?data=' + encodeURIComponent(JSON.stringify({action:'consulta',name})) + '&t=' + Date.now());
+  const d = JSON.parse(await r.text());
+  if (!d.ok) throw new Error(d.error || 'Não foi possível consultar a confirmação.');
+  return d.confirmation;
+}
+function novaSolicitacao() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,'');
+  return Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+}
+function escapeHTML(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
 // PAINEL ADMIN — carrega convidados + confirmações numa única chamada (rota "bootstrap" do Apps Script).
@@ -1128,7 +1133,7 @@ let adminLoadError = '';
 async function loadAdminData() {
   adminLoadError = '';
   try {
-    const r = await fetchTimeout(SHEET_URL + '?action=bootstrap&t=' + Date.now());
+    const r = await fetchTimeout(SHEET_URL + '?data=' + encodeURIComponent(JSON.stringify({action:'bootstrap',token:sessionStorage.getItem(SESSION_KEY)||''})) + '&t=' + Date.now());
     const text = await r.text();
     let d;
     try { d = JSON.parse(text); }
@@ -1190,15 +1195,16 @@ function fmtPhone(v) {
 }
 
 // Ao digitar o nome, busca convidado no Sheets e mostra os acompanhantes dele pra confirmação
-let confirmedNamesCache = null;
+let modoAlteracao = false;
+let registroAnterior = null;
+let envioEmAndamento = false;
 let guestsPromise = null;
 function ensureGuests(){ if(!guestsPromise) guestsPromise = fetchGuests(); return guestsPromise; }
-let confirmationsPromise = null;
-function ensureConfirmations(){ if(!confirmationsPromise) confirmationsPromise = fetchConfirmationsFromSheet(); return confirmationsPromise; }
+
 // Pre-carrega assim que a pagina abre, pra checagem do nome ficar pronta
 // (ou quase) quando a pessoa terminar de digitar.
 ensureGuests();
-ensureConfirmations();
+
 
 document.getElementById('guest-name').addEventListener('input', async function() {
   const name = this.value.trim();
@@ -1211,12 +1217,14 @@ document.getElementById('guest-name').addEventListener('input', async function()
 
   // Checa duplicidade ANTES de mostrar os acompanhantes, pra lista nao
   // chegar a aparecer pra quem ja confirmou.
-  confirmedNamesCache = await ensureConfirmations();
+  let previous;
+  try { previous = await consultarResposta(name); }
+  catch(e) { showRSVPAlert('Não conseguimos consultar sua resposta. Tente novamente antes de confirmar.'); return; }
   if (document.getElementById('guest-name').value.trim() !== name) return;
-  const already = confirmedNamesCache.find(c => norm(c.name) === norm(name));
+  const already = previous;
   if (already) {
     ps.classList.remove('visible');
-    showAlreadyConfirmed();
+    showAlreadyConfirmed(already);
     return;
   }
 
@@ -1234,28 +1242,79 @@ function hideRSVPHeader() {
   if (h) h.style.display = 'none';
 }
 
-function showAlreadyConfirmed() {
+function showAlreadyConfirmed(registro) {
+  registroAnterior = registro || null;
+  modoAlteracao = false;
   hideRSVPHeader();
   document.getElementById('rsvp-form-block').style.display = 'none';
   document.getElementById('feedback-ja').classList.add('visible');
+  document.querySelectorAll('#feedback-ja .btn-group').forEach(el => el.style.display = 'flex');
+  const status = registro && registro.resp === 'Não virá' ? 'que você não poderá comparecer' : 'sua confirmação de presença';
+  document.getElementById('feedback-ja-text').textContent = 'Já recebemos ' + status + '. Você deseja alterar sua resposta?';
+}
+
+async function permitirAlteracao() {
+  modoAlteracao = true;
+  document.getElementById('feedback-ja').classList.remove('visible');
+  document.getElementById('rsvp-form-block').style.display = '';
+  const header = document.querySelector('#page-rsvp .rsvp-header');
+  if (header) header.style.display = '';
+  const name = document.getElementById('guest-name').value.trim();
+  await ensureGuests();
+  const guest = guestList.find(g => norm(g.name) === norm(name));
+  if (guest && guest.companions.length) {
+    renderCompanions(guest.companions, registroAnterior);
+    document.getElementById('plus-section').classList.add('visible');
+  }
+  document.getElementById('rsvp-alert').classList.remove('visible');
+}
+
+function manterResposta() {
+  document.getElementById('feedback-ja-text').textContent = 'Sua resposta permanece registrada. Se precisar de ajuda, entre em contato com a aniversariante.';
+  document.querySelectorAll('#feedback-ja .btn-group').forEach(el => el.style.display = 'none');
 }
 
 // Monta a lista de acompanhantes já marcados (o convidado desmarca quem não vier)
-function renderCompanions(companions) {
+// Na alteracao, recupera os acompanhantes efetivamente confirmados e as idades salvas.
+// Em uma confirmacao nova, conserva o comportamento original: todos marcados.
+function renderCompanions(companions, registro = null) {
   const wrap = document.getElementById('companions-list');
-  wrap.innerHTML = companions.map((c, i) => {
-    const ageOptions = Array.from({length: 11}, (_, n) => `<option value="${n}">${n}</option>`).join('');
-    return `
-    <div class="companion-item">
-      <input type="checkbox" id="comp-check-${i}" class="companion-check" value="${i}" checked>
-      <label for="comp-check-${i}">${c.name}</label>
+  const anteriores = new Map();
+  if (registro && registro.resp === 'Confirmado') {
+    let saved = [];
+    try { saved = JSON.parse(registro.companionsData || '[]'); } catch(_) {}
+    if (Array.isArray(saved) && saved.length) {
+      saved.forEach(c => anteriores.set(norm(c.name), c.age == null ? '' : String(c.age)));
+    } else if (registro.companions) {
+      // Compatibilidade com respostas antigas, sem JSON: identifica os nomes
+      // do cadastro, mesmo que um nome contenha vírgula.
+      let remaining = String(registro.companions);
+      const sorted = [...companions].sort((a,b)=>b.name.length-a.name.length);
+      while (remaining.trim()) {
+        const match = sorted.find(c => norm(remaining).startsWith(norm(c.name)));
+        if (!match) break;
+        remaining = remaining.slice(match.name.length);
+        const age = remaining.match(/^\s*\((\d+)\s+anos?\)/i);
+        if (age) remaining = remaining.slice(age[0].length);
+        anteriores.set(norm(match.name), age ? age[1] : '');
+        remaining = remaining.replace(/^\s*,\s*/, '');
+      }
+    }
+  }
+  wrap.innerHTML = companions.map((c,i) => {
+    const marcado = registro ? anteriores.has(norm(c.name)) : true;
+    const idade = anteriores.get(norm(c.name));
+    const ageOptions = Array.from({length:11},(_,n)=>`<option value="${n}" ${String(idade)===String(n)&&marcado?'selected':''}>${n}</option>`).join('');
+    return `<div class="companion-item">
+      <input type="checkbox" id="comp-check-${i}" class="companion-check" value="${i}" ${marcado?'checked':''}>
+      <label for="comp-check-${i}">${escapeHTML(c.name)}</label>
       ${c.child ? `<select class="companion-age" data-idx="${i}"><option value="">Idade</option>${ageOptions}</select>` : ''}
-    </div>
-  `;
+    </div>`;
   }).join('');
 }
 
 async function submitRSVP(resp) {
+  if (envioEmAndamento) return;
   const name = document.getElementById('guest-name').value.trim();
   const phone = '';
 
@@ -1263,8 +1322,11 @@ async function submitRSVP(resp) {
 
   // Reaproveita os dados ja pre-carregados desde a abertura da pagina, em
   // vez de buscar tudo de novo — so mostra o aviso se ainda nao tiver pronto.
-  if (!guestList.length || !confirmedNamesCache) showRSVPAlert('Verificando sua presença na lista…');
-  const [, sheetsConfs] = await Promise.all([ensureGuests(), ensureConfirmations()]);
+  showRSVPAlert('Verificando sua presença na lista…');
+  await ensureGuests();
+  let existing;
+  try { existing = await consultarResposta(name); }
+  catch(e) { showRSVPAlert('Não foi possível consultar sua resposta. Tente novamente.'); return; }
 
   let guest = guestList.find(g => norm(g.name) === norm(name));
   if (!guest) {
@@ -1276,8 +1338,8 @@ async function submitRSVP(resp) {
   if (!guest) { showRSVPAlert('Seu nome não foi encontrado na lista de convidados. Verifique com a organização.'); return; }
 
   // Verifica duplicata no Sheets
-  const alreadyConfirmed = sheetsConfs.find(c => norm(c.name) === norm(name));
-  if (alreadyConfirmed) { showAlreadyConfirmed(); return; }
+  const alreadyConfirmed = existing;
+  if (alreadyConfirmed && !modoAlteracao) { showAlreadyConfirmed(alreadyConfirmed); return; }
 
   // Idade obrigatória para crianças marcadas (só ao confirmar presença)
   if (resp === 'sim') {
@@ -1326,28 +1388,48 @@ async function submitRSVP(resp) {
   // Envia e ESPERA a planilha responder "ok" antes de mostrar sucesso.
   // Tenta até 3 vezes; se todas falharem, avisa o convidado para tentar de novo.
   const btns = document.querySelectorAll('#rsvp-form-block .btn-rsvp');
+  envioEmAndamento = true;
   btns.forEach(b => b.disabled = true);
   showRSVPAlert('Enviando sua resposta…');
 
-  const params = encodeURIComponent(JSON.stringify({ action: 'confirmar', ...entry }));
+  const requestId = novaSolicitacao();
+  const params = encodeURIComponent(JSON.stringify({ action:'confirmar', ...entry,
+    companionsSelected: resp === 'sim' ? confirmedCompanions : [],
+    alterar:modoAlteracao, expectedRevision:registroAnterior ? (registroAnterior.revision||'') : '', requestId }));
   let enviado = false;
   for (let tentativa = 1; tentativa <= 3 && !enviado; tentativa++) {
     try {
       const r = await fetchTimeout(SHEET_URL + '?data=' + params + '&t=' + Date.now(), 30000);
       const d = JSON.parse(await r.text());
-      enviado = !!d.ok;
+      if (d.duplicado) {
+        btns.forEach(b => b.disabled = false);
+        envioEmAndamento = false;
+        showAlreadyConfirmed(alreadyConfirmed);
+        return;
+      }
+      if (!d.ok && d.error) {
+        btns.forEach(b => b.disabled = false);
+        envioEmAndamento = false;
+        showRSVPAlert(d.error);
+        return;
+      }
+      enviado = d.ok === true;
     } catch(_) {}
     if (!enviado && tentativa < 3) await new Promise(res => setTimeout(res, 2000));
   }
 
   btns.forEach(b => b.disabled = false);
+  envioEmAndamento = false;
   if (!enviado) {
-    showRSVPAlert('Não conseguimos registrar sua resposta. Verifique sua conexão e toque no botão novamente. Se o problema continuar, fale com a organização.');
+    showRSVPAlert('Não foi possível verificar se sua resposta foi gravada. Antes de enviar novamente, recarregue a página e consulte seu nome. Se continuar, fale com a aniversariante.');
     return;
   }
 
   document.getElementById('rsvp-alert').classList.remove('visible');
+  data.confirmations = data.confirmations.filter(c => norm(c.name) !== norm(entry.name));
   data.confirmations.push(entry);
+  registroAnterior = null;
+  modoAlteracao = false;
   saveData();
 
   hideRSVPHeader();
@@ -1364,30 +1446,32 @@ function showRSVPAlert(msg) {
 // ADMIN SESSION
 const SESSION_KEY = 'rsvp_admin_session';
 
-function checkSession() {
+async function checkSession() {
+  const token=sessionStorage.getItem(SESSION_KEY);
+  if (!token) return false;
   try {
-    const s = sessionStorage.getItem(SESSION_KEY);
-    if (s === 'ok') { showPage('admin'); return true; }
-  } catch(e) {}
-  return false;
-}
-
-function doLogin() {
-  const pass = document.getElementById('admin-pass').value;
-  if (pass === data.config.pass) {
-    document.getElementById('admin-pass').value = '';
-    try { sessionStorage.setItem(SESSION_KEY, 'ok'); } catch(e) {}
+    const r=await fetchTimeout(SHEET_URL+'?data='+encodeURIComponent(JSON.stringify({action:'bootstrap',token})));
+    const d=JSON.parse(await r.text());
+    if(!d.ok) throw Error('Sessão expirada');
     showPage('admin');
-  } else {
-    const el = document.getElementById('login-alert');
-    el.textContent = 'Senha incorreta. Tente novamente.';
-    el.classList.add('visible');
-    setTimeout(() => el.classList.remove('visible'), 4000);
-  }
+    return true;
+  } catch(_) {sessionStorage.removeItem(SESSION_KEY);return false;}
 }
-
+async function doLogin() {
+  const pass=document.getElementById('admin-pass').value;
+  const el=document.getElementById('login-alert');
+  try {
+    const r=await fetchTimeout(SHEET_URL+'?data='+encodeURIComponent(JSON.stringify({action:'adminLogin',password:pass})));
+    const d=JSON.parse(await r.text());
+    if(!d.ok||!d.token) throw Error(d.error||'Não foi possível entrar.');
+    sessionStorage.setItem(SESSION_KEY,d.token);
+    document.getElementById('admin-pass').value='';
+    el.classList.remove('visible');
+    showPage('admin');
+  } catch(e) {el.textContent=e.message||'Não foi possível entrar.';el.classList.add('visible');}
+}
 function doLogout() {
-  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+  sessionStorage.removeItem(SESSION_KEY);
   showPage('rsvp');
 }
 
@@ -1404,8 +1488,7 @@ function saveConfig() {
   data.config.date = document.getElementById('cfg-date').value.trim();
   data.config.local = document.getElementById('cfg-local').value.trim();
   data.config.prazo = document.getElementById('cfg-prazo').value.trim();
-  const np = document.getElementById('cfg-pass').value;
-  if (np) { data.config.pass = np; document.getElementById('cfg-pass').value = ''; }
+  // A senha administrativa é gerenciada exclusivamente no Apps Script.
   saveData();
   const el = document.getElementById('config-alert');
   el.textContent = 'Configurações salvas com sucesso.';
@@ -1432,7 +1515,7 @@ async function renderAdminGuests() {
       const acompanhantes = g.companions.length
         ? g.companions.map(c => c.name + (c.child ? ' (criança)' : '')).join(', ')
         : '—';
-      return `<tr><td>${g.name}</td><td style="color:var(--muted)">${acompanhantes}</td><td>${tag}</td></tr>`;
+      return `<tr><td>${escapeHTML(g.name)}</td><td style="color:var(--muted)">${escapeHTML(acompanhantes)}</td><td>${tag}</td></tr>`;
     }).join('')}</tbody>
   </table>
   <p style="font-size:0.72rem;color:var(--muted);font-weight:200;margin-top:1rem;letter-spacing:0.05em;">Para adicionar ou remover convidados e acompanhantes, edite diretamente a aba "Convidados" na planilha do Google Sheets.</p>`;
@@ -1445,9 +1528,7 @@ async function fetchAndRenderConfirmations() {
 
   await loadAdminData();
 
-  // Merge: Sheets + local (evita perda se Sheets falhar)
-  const localMapped = data.confirmations.map(c => ({ ...c, resp: c.resp === 'sim' ? 'Confirmado' : 'Não virá' }));
-  if (!confirmList.length) confirmList = localMapped;
+  // O Google Sheets é a única fonte de verdade. Não exibir cache local como confirmação.
 
   const sim = confirmList.filter(c => c.resp === 'Confirmado');
   const totalPess = sim.reduce((a,c) => a + (parseInt(c.total)||0), 0);
@@ -1472,13 +1553,13 @@ async function fetchAndRenderConfirmations() {
       const children = parseInt(c.children)||0;
       const adults = parseInt(c.adults) || (total - children);
       return `<tr>
-        <td>${c.name}</td>
+        <td>${escapeHTML(c.name)}</td>
         <td>${c.resp === 'Confirmado' ? '<span class="tag tag-green">Confirmado</span>' : '<span class="tag tag-rose">Não virá</span>'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? total : '—'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? adults : '—'}</td>
         <td style="color:var(--muted);text-align:center">${c.resp === 'Confirmado' ? children : '—'}</td>
-        <td style="color:var(--muted);font-size:0.78rem">${c.resp === 'Confirmado' ? (c.companions || '—') : '—'}</td>
-        <td style="color:var(--muted);font-size:0.72rem">${c.date || '—'}</td>
+        <td style="color:var(--muted);font-size:0.78rem">${c.resp === 'Confirmado' ? escapeHTML(c.companions || '—') : '—'}</td>
+        <td style="color:var(--muted);font-size:0.72rem">${escapeHTML(c.date || '—')}</td>
       </tr>`;
     }).join('')}
     </tbody>

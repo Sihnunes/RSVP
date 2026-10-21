@@ -629,8 +629,20 @@
 </head>
 <body>
 
+<!-- ========== LOGIN ========== -->
+<section id="login" class="hidden">
+  <span class="eyebrow">Painel de Gestão</span>
+  <h1 class="login-title">Mariana · XV</h1>
+  <div class="login-card">
+    <label class="field-label" for="admin-pass">Senha</label>
+    <input type="password" class="input" id="admin-pass" placeholder="Digite a senha…" autocomplete="current-password" autocorrect="off" spellcheck="false">
+    <button class="btn" id="btn-login">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</section>
+
 <!-- ========== APP ========== -->
-<section id="app">
+<section id="app" class="hidden">
   <header class="app-header">
     <div>
       <div class="app-title">Mariana · XV</div>
@@ -746,11 +758,13 @@ async function loadData() {
   loadError = '';
   let rawGuests = null;
   try {
-    const r = await fetchTimeout(SHEET_URL + '?action=bootstrap&t=' + Date.now());
+    const req = encodeURIComponent(JSON.stringify({ action: 'bootstrap', token: getToken() }));
+    const r = await fetchTimeout(SHEET_URL + '?data=' + req + '&t=' + Date.now());
     const text = await r.text();
     let d;
     try { d = JSON.parse(text); }
     catch(_) { throw new Error('O Apps Script não retornou dados (verifique a implantação e o acesso "Qualquer pessoa").'); }
+    if (!d.ok && /não autorizado/i.test(d.error || '')) { sessaoExpirada = true; return; }
     if (!d.ok) throw new Error('Erro no Apps Script: ' + (d.error || 'desconhecido'));
     confirmations = d.confirmacoes || [];
     if (Array.isArray(d.convidados) && d.convidados.length) rawGuests = d.convidados;
@@ -991,13 +1005,62 @@ function renderAll() {
   $('last-update').textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
+/* ---------- LOGIN ---------- */
+// Senha validada pelo Apps Script; o painel guarda só o acesso temporário (válido por 6 horas).
+const TOKEN_KEY = 'rsvp_painel_token';
+let sessaoExpirada = false;
+function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch(_) { return ''; } }
+function setToken(t) { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch(_) {} }
+
+function showLogin(msg) {
+  setToken('');
+  $('app').classList.add('hidden');
+  $('login').classList.remove('hidden');
+  $('login-error').textContent = msg || '';
+}
+function showApp() {
+  $('login').classList.add('hidden');
+  $('app').classList.remove('hidden');
+}
+
+async function doLogin() {
+  const pass = $('admin-pass').value;
+  if (!pass) { $('login-error').textContent = 'Digite a senha.'; return; }
+  $('btn-login').disabled = true;
+  $('login-error').textContent = 'Entrando…';
+  try {
+    const req = encodeURIComponent(JSON.stringify({ action: 'adminLogin', password: pass }));
+    const r = await fetchTimeout(SHEET_URL + '?data=' + req + '&t=' + Date.now());
+    const d = JSON.parse(await r.text());
+    if (!d.ok || !d.token) throw new Error(d.error || 'Não foi possível entrar.');
+    setToken(d.token);
+    $('admin-pass').value = '';
+    $('login-error').textContent = '';
+    showApp();
+    refresh();
+  } catch(e) {
+    $('login-error').textContent = e.name === 'AbortError' ? 'A planilha demorou para responder. Tente de novo.' : (e.message || 'Não foi possível entrar.');
+  } finally {
+    $('btn-login').disabled = false;
+  }
+}
+$('btn-login').addEventListener('click', doLogin);
+$('admin-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
 let refreshing = false;
 async function refresh() {
-  if (refreshing) return;
+  if (refreshing || !getToken()) return;
   refreshing = true;
+  sessaoExpirada = false;
   $('btn-refresh').classList.add('spin');
   $('last-update').textContent = 'Atualizando…';
   await loadData();
+  if (sessaoExpirada) {
+    $('btn-refresh').classList.remove('spin');
+    refreshing = false;
+    showLogin('Sua sessão expirou. Entre novamente.');
+    return;
+  }
   renderAll();
   $('btn-refresh').classList.remove('spin');
   refreshing = false;
@@ -1038,7 +1101,8 @@ $('btn-export').addEventListener('click', () => {
 });
 
 /* ---------- INÍCIO ---------- */
-refresh();
+if (getToken()) { showApp(); refresh(); }
+else showLogin();
 </script>
 </body>
 </html>
