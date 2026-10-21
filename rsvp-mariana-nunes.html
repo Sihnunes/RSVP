@@ -392,6 +392,8 @@
     background: var(--pink-hover);
   }
 
+  .btn-rsvp:disabled { opacity: 0.5; cursor: wait; }
+
   .btn-rsvp.decline {
     border: 1px solid var(--border);
     color: var(--text);
@@ -1302,17 +1304,32 @@ async function submitRSVP(resp) {
   const date = new Date().toLocaleString('pt-BR');
   const entry = { name: guest.name, phone, resp, plus, children, adults, companions, date };
 
+  // Envia e ESPERA a planilha responder "ok" antes de mostrar sucesso.
+  // Tenta até 3 vezes; se todas falharem, avisa o convidado para tentar de novo.
+  const btns = document.querySelectorAll('#rsvp-form-block .btn-rsvp');
+  btns.forEach(b => b.disabled = true);
+  showRSVPAlert('Enviando sua resposta…');
+
+  const params = encodeURIComponent(JSON.stringify({ action: 'confirmar', ...entry }));
+  let enviado = false;
+  for (let tentativa = 1; tentativa <= 3 && !enviado; tentativa++) {
+    try {
+      const r = await fetchTimeout(SHEET_URL + '?data=' + params + '&t=' + Date.now(), 30000);
+      const d = JSON.parse(await r.text());
+      enviado = !!d.ok;
+    } catch(_) {}
+    if (!enviado && tentativa < 3) await new Promise(res => setTimeout(res, 2000));
+  }
+
+  btns.forEach(b => b.disabled = false);
+  if (!enviado) {
+    showRSVPAlert('Não conseguimos registrar sua resposta. Verifique sua conexão e toque no botão novamente. Se o problema continuar, fale com a organização.');
+    return;
+  }
+
+  document.getElementById('rsvp-alert').classList.remove('visible');
   data.confirmations.push(entry);
   saveData();
-
-  // Envia via GET com iframe oculto (sem CORS)
-  const params = encodeURIComponent(JSON.stringify({ action: 'confirmar', ...entry }));
-  const url = SHEET_URL + '?data=' + params + '&t=' + Date.now();
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = url;
-  document.body.appendChild(iframe);
-  setTimeout(() => { try { document.body.removeChild(iframe); } catch(e) {} }, 5000);
 
   document.getElementById('rsvp-form-block').style.display = 'none';
   document.querySelector('.admin-link').style.display = 'none';
