@@ -905,9 +905,9 @@
 
     <div class="feedback" id="feedback-ja">
       <div class="feedback-icon">· ✦ ·</div>
-      <h3>Presença <em>Confirmada!</em></h3>
-      <p>Sua confirmação já foi registrada.</p>
-      <p>Estamos ansiosos para celebrar esse momento com você.</p>
+      <h3>Você já <em>respondeu!</em></h3>
+      <p>Encontramos sua resposta registrada na nossa lista.</p>
+      <p>Se precisar alterar alguma informação, fale com a organização.</p>
     </div>
 
     <a class="admin-link" onclick="showPage('admin-login')">Área administrativa</a>
@@ -1230,7 +1230,14 @@ document.getElementById('guest-name').addEventListener('input', async function()
   }
 });
 
+// Esconde o cabeçalho "Confirme sua Presença" quando aparece uma tela de resposta
+function hideRSVPHeader() {
+  const h = document.querySelector('#page-rsvp .rsvp-header');
+  if (h) h.style.display = 'none';
+}
+
 function showAlreadyConfirmed() {
+  hideRSVPHeader();
   document.getElementById('rsvp-form-block').style.display = 'none';
   document.getElementById('feedback-ja').classList.add('visible');
 }
@@ -1331,6 +1338,7 @@ async function submitRSVP(resp) {
   data.confirmations.push(entry);
   saveData();
 
+  hideRSVPHeader();
   document.getElementById('rsvp-form-block').style.display = 'none';
   document.querySelector('.admin-link').style.display = 'none';
   document.getElementById(resp === 'sim' ? 'feedback-sim' : 'feedback-nao').classList.add('visible');
