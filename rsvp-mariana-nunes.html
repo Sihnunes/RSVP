@@ -1279,6 +1279,20 @@ async function submitRSVP(resp) {
   const alreadyConfirmed = sheetsConfs.find(c => norm(c.name) === norm(name));
   if (alreadyConfirmed) { showAlreadyConfirmed(); return; }
 
+  // Idade obrigatória para crianças marcadas (só ao confirmar presença)
+  if (resp === 'sim') {
+    const semIdade = Array.from(document.querySelectorAll('.companion-check:checked'))
+      .map(chk => document.querySelector(`.companion-age[data-idx="${chk.value}"]`))
+      .filter(sel => sel && sel.value === '');
+    document.querySelectorAll('.companion-age').forEach(sel => sel.style.borderColor = '');
+    if (semIdade.length) {
+      semIdade.forEach(sel => sel.style.borderColor = '#b71c1c');
+      showRSVPAlert('Por favor, informe a idade de cada criança que vem com você.');
+      semIdade[0].focus();
+      return;
+    }
+  }
+
   document.getElementById('rsvp-alert').classList.remove('visible');
 
   // Pega só os acompanhantes que ficaram marcados (o convidado pode desmarcar quem não vier)
