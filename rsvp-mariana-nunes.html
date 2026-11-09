@@ -241,6 +241,28 @@
 
   .plus-section.visible { display: block; }
 
+  .name-status {
+    min-height: 1.2em;
+    margin-top: 0.5rem;
+    font-size: 13px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--muted);
+  }
+  .name-status.ok { color: var(--deep); font-style: normal; }
+
+  .companions-intro {
+    border-left: 3px solid var(--rose);
+    background: var(--blush);
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.9rem;
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--deep);
+  }
+  .companions-intro strong { font-weight: 500; }
+
   .companions-list {
     display: flex;
     flex-direction: column;
@@ -874,18 +896,20 @@
         <label class="field-label">Nome completo</label>
         <div class="field-rule"></div>
         <input type="text" class="field-input" id="guest-name" placeholder="Digite seu nome completo…" autocomplete="off" />
+        <p class="name-status" id="name-status" aria-live="polite"></p>
       </div>
 
       <div class="plus-section" id="plus-section">
         <div class="field-group">
-          <label class="field-label">Quem vem com você?</label>
+          <label class="field-label">Seus acompanhantes</label>
           <div class="field-rule"></div>
+          <p class="companions-intro" id="companions-intro"></p>
           <div class="companions-list" id="companions-list"></div>
         </div>
       </div>
 
       <div class="btn-group">
-        <button class="btn-rsvp" onclick="submitRSVP('sim')">Confirmar presença</button>
+        <button class="btn-rsvp" id="btn-confirm" onclick="submitRSVP('sim')">Confirmar presença</button>
         <button class="btn-rsvp decline" onclick="submitRSVP('nao')">Não poderei ir</button>
       </div>
     </div>
@@ -1068,16 +1092,25 @@ function buildGuestList(raw) {
 // Busca convidados direto da planilha via Apps Script (dados em tempo real).
 // Se falhar, usa o CSV público — que o Google atualiza com atraso de alguns minutos.
 // Colunas da aba "Convidados": A) Nome  B) Convidado Principal (vazio se for titular)  C) Criança (SIM/NÃO)
+// A lista fica guardada no navegador: na próxima visita aparece na hora,
+// e a planilha é consultada de novo em segundo plano.
+const GUESTS_CACHE_KEY = 'rsvp_mariana_guests_v1';
+try {
+  const cached = JSON.parse(localStorage.getItem(GUESTS_CACHE_KEY) || 'null');
+  if (Array.isArray(cached) && cached.length) guestList = buildGuestList(cached);
+} catch(_) {}
+
 async function fetchGuests() {
   try {
     const r = await fetchTimeout(SHEET_URL + '?t=' + Date.now());
     const d = JSON.parse(await r.text());
     if (d.ok && Array.isArray(d.convidados) && d.convidados.length) {
       guestList = buildGuestList(d.convidados);
+      try { localStorage.setItem(GUESTS_CACHE_KEY, JSON.stringify(d.convidados)); } catch(_) {}
       return;
     }
   } catch(_) {}
-  guestList = []; // Sem fallback público: dados devem vir do Apps Script
+  if (!guestList.length) guestList = []; // Sem fallback público: dados devem vir do Apps Script
 }
 
 async function fetchGuestsCSV() {
@@ -1113,7 +1146,18 @@ async function fetchTimeout(url, ms = 15000) {
 }
 
 // Busca confirmações do Sheets para verificar duplicatas
+// Guarda a consulta feita ao digitar o nome, para o botão não consultar de novo.
+const consultaCache = new Map();
 async function consultarResposta(name) {
+  const key = norm(name);
+  if (!consultaCache.has(key)) {
+    const p = consultarRespostaRemota(name);
+    consultaCache.set(key, p);
+    p.catch(() => consultaCache.delete(key));
+  }
+  return consultaCache.get(key);
+}
+async function consultarRespostaRemota(name) {
   const r = await fetchTimeout(SHEET_URL + '?data=' + encodeURIComponent(JSON.stringify({action:'consulta',name})) + '&t=' + Date.now());
   const d = JSON.parse(await r.text());
   if (!d.ok) throw new Error(d.error || 'Não foi possível consultar a confirmação.');
@@ -1199,7 +1243,38 @@ let modoAlteracao = false;
 let registroAnterior = null;
 let envioEmAndamento = false;
 let guestsPromise = null;
-function ensureGuests(){ if(!guestsPromise) guestsPromise = fetchGuests(); return guestsPromise; }
+function ensureGuests(){
+  if(!guestsPromise) guestsPromise = fetchGuests();
+  // Com a lista já guardada no navegador, não espera a planilha responder.
+  return guestList.length ? Promise.resolve() : guestsPromise;
+}
+
+function setNameStatus(msg, ok) {
+  const el = document.getElementById('name-status');
+  el.textContent = msg || '';
+  el.classList.toggle('ok', !!ok);
+}
+
+// Texto do botão mostra quantas pessoas serão confirmadas
+function updateConfirmLabel(guest) {
+  const btn = document.getElementById('btn-confirm');
+  if (!guest || !guest.companions.length) { btn.textContent = 'Confirmar presença'; return; }
+  const total = document.querySelectorAll('.companion-check:checked').length + 1;
+  btn.textContent = total === 1 ? 'Confirmar só eu' : `Confirmar ${total} pessoas`;
+}
+let guestAtual = null;
+document.getElementById('companions-list').addEventListener('change', () => updateConfirmLabel(guestAtual));
+
+function showCompanions(guest, registro = null) {
+  const n = guest.companions.length;
+  const primeiro = escapeHTML(guest.name.split(' ')[0]);
+  document.getElementById('companions-intro').innerHTML =
+    `Olá, ${primeiro}! Seu convite inclui <strong>${n} acompanhante${n > 1 ? 's' : ''}</strong>. ` +
+    `Para confirmar a presença de todos, basta manter selecionados os nomes de quem irá com você e desmarcar os de quem não poderá comparecer.`;
+  renderCompanions(guest.companions, registro);
+  document.getElementById('plus-section').classList.add('visible');
+  updateConfirmLabel(guest);
+}
 
 // Pre-carrega assim que a pagina abre, pra checagem do nome ficar pronta
 // (ou quase) quando a pessoa terminar de digitar.
@@ -1209,21 +1284,27 @@ ensureGuests();
 document.getElementById('guest-name').addEventListener('input', async function() {
   const name = this.value.trim();
   const ps = document.getElementById('plus-section');
-  if (!name) { ps.classList.remove('visible'); return; }
+  guestAtual = null;
+  updateConfirmLabel(null);
+  if (!name) { ps.classList.remove('visible'); setNameStatus(''); return; }
 
+  if (!guestList.length) setNameStatus('Carregando a lista de convidados…');
   await ensureGuests();
+  if (document.getElementById('guest-name').value.trim() !== name) return;
   const guest = guestList.find(x => norm(x.name) === norm(name));
-  if (!guest) { ps.classList.remove('visible'); return; }
-
-  // Mostra os acompanhantes JA, sem esperar a consulta de duplicidade
-  // (que leva alguns segundos). Se a pessoa ja tiver respondido, a lista
-  // some logo em seguida e aparece a tela de "ja confirmado".
-  if (guest.companions.length) {
-    renderCompanions(guest.companions);
-    ps.classList.add('visible');
-  } else {
+  if (!guest) {
     ps.classList.remove('visible');
+    const digitando = guestList.some(g => norm(g.name).startsWith(norm(name)));
+    setNameStatus(!guestList.length ? 'Não conseguimos carregar a lista. Recarregue a página.'
+      : digitando ? '' : 'Digite seu nome completo, como está no convite.');
+    return;
   }
+
+  // Mostra os acompanhantes na hora, sem esperar a consulta de duplicidade.
+  guestAtual = guest;
+  setNameStatus('✓ Nome encontrado', true);
+  if (guest.companions.length) showCompanions(guest);
+  else ps.classList.remove('visible');
 
   let previous;
   try { previous = await consultarResposta(name); }
@@ -1263,8 +1344,8 @@ async function permitirAlteracao() {
   await ensureGuests();
   const guest = guestList.find(g => norm(g.name) === norm(name));
   if (guest && guest.companions.length) {
-    renderCompanions(guest.companions, registroAnterior);
-    document.getElementById('plus-section').classList.add('visible');
+    guestAtual = guest;
+    showCompanions(guest, registroAnterior);
   }
   document.getElementById('rsvp-alert').classList.remove('visible');
 }
@@ -1345,8 +1426,8 @@ async function submitRSVP(resp) {
   // ve a lista agora e confirma de novo, em vez de enviar só o próprio nome.
   const ps = document.getElementById('plus-section');
   if (resp === 'sim' && guest.companions.length && !ps.classList.contains('visible')) {
-    renderCompanions(guest.companions);
-    ps.classList.add('visible');
+    guestAtual = guest;
+    showCompanions(guest);
     showRSVPAlert('Você tem acompanhantes na sua lista! Marque quem vem com você e clique em "Confirmar presença" novamente.');
     ps.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
@@ -1437,6 +1518,7 @@ async function submitRSVP(resp) {
   }
 
   document.getElementById('rsvp-alert').classList.remove('visible');
+  consultaCache.delete(norm(entry.name));
   data.confirmations = data.confirmations.filter(c => norm(c.name) !== norm(entry.name));
   data.confirmations.push(entry);
   registroAnterior = null;
