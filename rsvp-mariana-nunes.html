@@ -1215,24 +1215,24 @@ document.getElementById('guest-name').addEventListener('input', async function()
   const guest = guestList.find(x => norm(x.name) === norm(name));
   if (!guest) { ps.classList.remove('visible'); return; }
 
-  // Checa duplicidade ANTES de mostrar os acompanhantes, pra lista nao
-  // chegar a aparecer pra quem ja confirmou.
-  let previous;
-  try { previous = await consultarResposta(name); }
-  catch(e) { showRSVPAlert('Não conseguimos consultar sua resposta. Tente novamente antes de confirmar.'); return; }
-  if (document.getElementById('guest-name').value.trim() !== name) return;
-  const already = previous;
-  if (already) {
-    ps.classList.remove('visible');
-    showAlreadyConfirmed(already);
-    return;
-  }
-
+  // Mostra os acompanhantes JA, sem esperar a consulta de duplicidade
+  // (que leva alguns segundos). Se a pessoa ja tiver respondido, a lista
+  // some logo em seguida e aparece a tela de "ja confirmado".
   if (guest.companions.length) {
     renderCompanions(guest.companions);
     ps.classList.add('visible');
   } else {
     ps.classList.remove('visible');
+  }
+
+  let previous;
+  try { previous = await consultarResposta(name); }
+  catch(e) { showRSVPAlert('Não conseguimos consultar sua resposta. Tente novamente antes de confirmar.'); return; }
+  if (document.getElementById('guest-name').value.trim() !== name) return;
+  const already = previous;
+  if (already && !modoAlteracao) {
+    ps.classList.remove('visible');
+    showAlreadyConfirmed(already);
   }
 });
 
@@ -1340,6 +1340,17 @@ async function submitRSVP(resp) {
   // Verifica duplicata no Sheets
   const alreadyConfirmed = existing;
   if (alreadyConfirmed && !modoAlteracao) { showAlreadyConfirmed(alreadyConfirmed); return; }
+
+  // Lembrete: quem tem acompanhantes e clicou antes da lista aparecer
+  // ve a lista agora e confirma de novo, em vez de enviar só o próprio nome.
+  const ps = document.getElementById('plus-section');
+  if (resp === 'sim' && guest.companions.length && !ps.classList.contains('visible')) {
+    renderCompanions(guest.companions);
+    ps.classList.add('visible');
+    showRSVPAlert('Você tem acompanhantes na sua lista! Marque quem vem com você e clique em "Confirmar presença" novamente.');
+    ps.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
 
   // Idade obrigatória para crianças marcadas (só ao confirmar presença)
   if (resp === 'sim') {
