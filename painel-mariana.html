@@ -937,15 +937,50 @@ function renderConfirmations() {
   const counts = {
     todos: confirmations.length,
     confirmado: confirmations.filter(c => c.resp === 'Confirmado').length,
-    nao: confirmations.filter(c => c.resp !== 'Confirmado').length
+    nao: confirmations.filter(c => c.resp !== 'Confirmado').length,
+    aguardando: guests.filter(g => g.status === 'aguardando').length
   };
-  const labels = { confirmado: 'Confirmados', nao: 'Recusados', todos: 'Todas' };
+  const labels = { confirmado: 'Confirmados', nao: 'Recusados', aguardando: 'Pendentes', todos: 'Todas' };
   $('chips-conf').innerHTML = Object.keys(labels).map(k =>
     `<button class="${confFilter === k ? 'active' : ''}" data-f="${k}">${labels[k]}<b>${counts[k]}</b></button>`
   ).join('');
   $('chips-conf').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { confFilter = b.dataset.f; renderConfirmations(); }));
 
   const q = norm($('search-conf').value);
+
+  // Pendentes: convidados da lista que ainda não responderam
+  if (confFilter === 'aguardando') {
+    const pend = guests
+      .filter(g => g.status === 'aguardando')
+      .filter(g => !q || norm(g.name).includes(q) || g.companions.some(c => norm(c.name).includes(q)))
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    const previstas = pend.reduce((a, g) => a + 1 + g.companions.length, 0);
+    $('count-conf').textContent = `${pend.length} titular${pend.length === 1 ? '' : 'es'} · ${previstas} pessoa${previstas === 1 ? '' : 's'} prevista${previstas === 1 ? '' : 's'}`;
+    if (!guests.length) { $('list-conf').innerHTML = '<div class="empty">Nenhum convidado encontrado na planilha.</div>'; return; }
+    if (!pend.length) { $('list-conf').innerHTML = `<div class="empty">${q ? 'Nenhum resultado.' : 'Todos os convidados já responderam.'}</div>`; return; }
+    $('list-conf').innerHTML = pend.map(g => {
+      const n = 1 + g.companions.length;
+      const pills = [`<span class="pill titular">${esc(g.name.split(' ')[0])}</span>`]
+        .concat(g.companions.map(c => c.child
+          ? `<span class="pill child">${esc(c.name)} · criança</span>`
+          : `<span class="pill">${esc(c.name)}</span>`))
+        .join('');
+      return `<div class="resp-card">
+        <div class="resp-head">
+          <div class="resp-head-main">
+            <div class="resp-name">${esc(g.name)}</div>
+            <div class="resp-date">Ainda não respondeu</div>
+          </div>
+          <div class="resp-badge" style="background:#fff8e1"><b>${n}</b><span>${n === 1 ? 'prevista' : 'previstas'}</span></div>
+        </div>
+        <div class="resp-body">
+          ${g.companions.length ? `<div class="pills">${pills}</div>` : '<div class="resp-alone">Convite sem acompanhantes</div>'}
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
   const list = [...confirmations].reverse()
     .filter(c => confFilter === 'todos' || (confFilter === 'confirmado' ? c.resp === 'Confirmado' : c.resp !== 'Confirmado'))
     .filter(c => !q || norm(c.name).includes(q) || norm(c.companions).includes(q));
